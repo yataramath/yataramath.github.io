@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>やたら楽しい数学のゲーム</title>
+<meta name="description" content="YouTube「やたら楽しい数学」のゲームが全部ここで遊べます。トーラス囲碁、トーラスオセロ、立体リバーシ、6（ロク）など。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="./config.js"></script>
+<style>
+/* Layout: a plain title block with jump links, then one section per kind of game (囲碁, オセロ・リバーシ, …), each a grid of game cards with small drawings; credits at the foot */
+:root{
+  --bg:#eef0f3;
+  --panel:#ffffff;
+  --ink:#14171d;
+  --muted:#5b6270;
+  --line:#d3d8e0;
+  --accent:#2f47b8;
+  --accent-soft:#dfe4f7;
+  --new:#c2410c;
+  --f-display:"Dela Gothic One","Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#0f1218; --panel:#161a22; --ink:#e6e9ef; --muted:#939aa8; --line:#272d39; --accent:#94a6f2; --accent-soft:#232b47; --new:#fb8a4c; color-scheme:dark; }
+}
+:root[data-theme="dark"]{ --bg:#0f1218; --panel:#161a22; --ink:#e6e9ef; --muted:#939aa8; --line:#272d39; --accent:#94a6f2; --accent-soft:#232b47; --new:#fb8a4c; color-scheme:dark; }
+*,*::before,*::after{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.7}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:16px}
+header.top{padding-block:44px 28px;display:grid;gap:10px}
+.eyebrow{margin:0;font-family:var(--f-mono);font-size:12.5px;letter-spacing:.12em;color:var(--muted)}
+h1{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(34px,6vw,64px);line-height:1.05;letter-spacing:.01em;text-wrap:balance}
+h1 em{font-style:normal;color:var(--accent)}
+.lead{margin:0;max-width:40em;color:var(--muted);font-size:15.5px}
+.yt{display:inline-flex;align-items:center;gap:8px;margin-top:6px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);text-decoration:none;font-weight:700;font-size:14px;justify-self:start}
+.yt:hover{border-color:var(--ink)}
+.yt svg{width:18px;height:18px}
+.jump{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 0;padding:0;list-style:none}
+.jump a{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);text-decoration:none;font-size:13.5px;font-weight:700}
+.jump a:hover{border-color:var(--ink)}
+.jump a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.jump small{font-family:var(--f-mono);font-weight:500;color:var(--muted)}
+.group{padding-bottom:34px;scroll-margin-top:16px}
+.group-head{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 14px;border-top:1px solid var(--line);padding-top:20px;margin-bottom:16px}
+.group-head h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(22px,3.2vw,28px);line-height:1.2}
+.group-head p{margin:0;color:var(--muted);font-size:14px}
+.grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.grid > li{display:grid}
+.card{display:grid;grid-template-rows:auto 1fr;border-radius:18px;background:var(--panel);border:1px solid var(--line);overflow:hidden;text-decoration:none;transition:transform .15s,box-shadow .15s,border-color .15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgb(20 24 35 / .12);border-color:var(--ink)}
+.card:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.art{aspect-ratio:16/9;display:block;width:100%;height:auto}
+.body{display:grid;gap:8px;padding:16px 18px 18px;align-content:start}
+.title-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.card h3{margin:0;font-size:20px;line-height:1.3;font-weight:700}
+.badge{font-family:var(--f-mono);font-size:11px;font-weight:500;color:var(--new);border:1px solid currentColor;border-radius:999px;padding:1px 8px;flex:none}
+.desc{margin:0;color:var(--muted);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 0;padding:0;list-style:none}
+.chips li{font-size:12px;padding:2px 9px;border-radius:999px;background:var(--accent-soft);color:var(--ink)}
+.champs{margin:2px 0 0;font-size:12.5px;color:var(--muted);font-family:var(--f-mono)}
+.play{margin-top:4px;font-weight:700;color:var(--accent);font-size:14px}
+footer{border-top:1px solid var(--line);padding-block:22px 40px;color:var(--muted);font-size:12.5px;display:grid;gap:6px}
+footer p{margin:0}
+@media (prefers-reduced-motion: reduce){ .card{transition:none} .card:hover{transform:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">YATARA TANOSHII SUUGAKU · GAMES</p>
+    <h1>やたら楽しい数学の<em>ゲーム</em></h1>
+    <p class="lead">YouTube「やたら楽しい数学」で遊んでいる、ちょっと変わった盤のゲームたちです。どれもブラウザですぐ遊べて、部屋の名前を合わせれば離れた人ともオンラインで対戦できます。CPUの最強に勝つと、各ゲームのページの下に名前が残ります。</p>
+    <a class="yt" id="ytLink" href="#" target="_blank" rel="noopener" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="4" fill="#e11d1d"/><path d="M10 9v6l5-3z" fill="#fff"/></svg>
+      YouTubeチャンネルへ
+    </a>
+    <ul class="jump" id="jump" aria-label="ゲームの種類"></ul>
+  </header>
+
+  <main id="groups"></main>
+
+  <footer>
+    <p>ゲームは順番に増えていきます。</p>
+    <p>碁石の音：<a href="https://github.com/SabakiHQ/Sabaki" target="_blank" rel="noopener">Sabaki</a>（MIT License, © Yichuan Shen）</p>
+  </footer>
+</div>
+
+<script>
+/* ================= 種類（見出し）。新しい種類のゲームを作ったら1行足します =================
+   この順番で上から並びます。ゲームが1つもない種類は出ません。 */
+const GROUPS = [
+  { id: 'go', title: '囲碁のなかま', sub: '石で囲んで、陣地を取り合う' },
+  { id: 'othello', title: 'オセロ・リバーシのなかま', sub: '挟んで、ひっくり返す' },
+  { id: 'shogi', title: '将棋のなかま', sub: '' },
+  { id: 'chess', title: 'チェスのなかま', sub: '' },
+  { id: 'original', title: 'オリジナル', sub: 'やたら楽しい数学で生まれたゲーム' },
+];
+/* ================= ここに1つ足すと、一覧にゲームが増えます =================
+   group … 上の GROUPS の id（どの見出しの下に並ぶか）
+   url   … ゲームの場所（このリポジトリの中のフォルダなら './フォルダ名/'、別のリポジトリなら '/リポジトリ名/'）
+   art   … 絵の種類：'go' 'othello' 'cube' 'six'（ない場合は 'plain'）
+   record… まとめ記録係で殿堂を取っているゲームのID（なければ書かない） */
+const GAMES = [
+  { group: 'go', title: 'トーラス囲碁', url: './torus-go/', isNew: true, art: 'go', record: 'torus-go',
+    desc: 'ドーナツ型の碁盤で打つ囲碁。端も隅もない盤と、1つねじれた盤。9路と13路。',
+    tags: ['CPU 3段階', '2人対戦', 'オンライン対戦', '最強の殿堂'] },
+  { group: 'othello', title: 'トーラスオセロ', url: './torus-othello/', art: 'othello', record: 'torus-othello',
+    desc: 'ドーナツ型の48マスで遊ぶオセロ。輪っかを一周すると、置いた石そのものでも挟めます。ねじれ版の最強は本気。',
+    tags: ['CPU 3段階', '2人対戦', 'オンライン対戦', '最強の殿堂'] },
+  { group: 'othello', title: '立体リバーシ 4×4×4', url: '/rittai-reversi/', art: 'cube',
+    desc: '4×4×4の立方体で遊ぶリバーシ。26方向に挟めます。わざと負けにくる「最弱」も。',
+    tags: ['CPU 4段階', '2人対戦', 'オンライン対戦', '最強・最弱の殿堂'] },
+  { group: 'original', title: '6（ロク）', url: '/six/', art: 'six',
+    desc: '数字のマスのあいだに線を引き、同じ数字だけの領域を囲んで取るオリジナルの陣取りゲーム。',
+    tags: ['CPU 3段階', 'オンライン対戦', '最強の殿堂'] },
+];
+
+/* ---------------- 絵（小さなSVG） ---------------- */
+function art(kind) {
+  const W = 320, H = 180;
+  const torus = (wood, line, stones) => {
+    let s = `<rect width="${W}" height="${H}" fill="${wood.bg}"/>`;
+    s += `<ellipse cx="160" cy="98" rx="118" ry="58" fill="${wood.body}"/><ellipse cx="160" cy="86" rx="44" ry="16" fill="${wood.bg}"/>`;
+    for (let k = -3; k <= 3; k++) { const x = 160 + k * 33; s += `<path d="M${x} ${48 + Math.abs(k) * 3} Q ${x + k * 6} 100 ${x} ${152 - Math.abs(k) * 3}" stroke="${line}" stroke-width="1.6" fill="none" opacity=".75"/>`; }
+    for (const ry of [24, 40, 52]) s += `<ellipse cx="160" cy="98" rx="${ry * 2.1}" ry="${ry}" stroke="${line}" stroke-width="1.6" fill="none" opacity=".6"/>`;
+    for (const [x, y, c] of stones) s += `<ellipse cx="${x}" cy="${y}" rx="13" ry="10" fill="${c}" stroke="#0005" stroke-width=".8"/>`;
+    return s;
+  };
+  if (kind === 'go') return torus({ bg: '#e9ecf3', body: '#d9a85b' }, '#3b2410', [[127, 112, '#17191d'], [160, 128, '#f4f2ec'], [193, 112, '#17191d'], [160, 145, '#17191d'], [94, 120, '#f4f2ec']]);
+  if (kind === 'othello') return torus({ bg: '#e5ece7', body: '#2e7b55' }, '#0b2a1c', [[127, 116, '#f4f2ec'], [193, 116, '#141716'], [127, 140, '#141716'], [193, 140, '#f4f2ec']]);
+  if (kind === 'cube') {
+    let s = `<rect width="${W}" height="${H}" fill="#e8e6ef"/>`;
+    const iso = (x, y, z) => [160 + (x - y) * 24, 40 + (x + y) * 12 + z * 26];
+    for (let z = 3; z >= 0; z--) for (let x = 0; x < 4; x++) for (let y = 0; y < 4; y++) {
+      const [px, py] = iso(x, y, z);
+      if (z === 0 || (x + y + z) % 5 === 0) s += `<path d="M${px} ${py} l24 12 l-24 12 l-24 -12z" fill="none" stroke="#6b6489" stroke-width=".8" opacity="${0.25 + z * 0.12}"/>`;
+    }
+    const st = [[1, 1, 1, '#141716'], [2, 1, 1, '#f4f2ec'], [1, 2, 2, '#f4f2ec'], [2, 2, 2, '#141716']];
+    for (const [x, y, z, c] of st) { const [px, py] = iso(x, y, z); s += `<circle cx="${px}" cy="${py + 12}" r="11" fill="${c}" stroke="#0006" stroke-width=".8"/>`; }
+    return s;
+  }
+  if (kind === 'six') {
+    let s = `<rect width="${W}" height="${H}" fill="#f2f1ec"/>`;
+    for (let x = 0; x <= W; x += 12) s += `<path d="M${x} 0V${H}" stroke="#9fb3c8" stroke-width=".5" opacity=".6"/>`;
+    for (let y = 0; y <= H; y += 12) s += `<path d="M0 ${y}H${W}" stroke="#9fb3c8" stroke-width=".5" opacity=".6"/>`;
+    const nums = ['12345', '24413', '35552', '41123', '53214'];
+    nums.forEach((r, j) => r.split('').forEach((d, i) => { s += `<text x="${100 + i * 30}" y="${40 + j * 28}" font-family="IBM Plex Mono, monospace" font-size="17" fill="#2b2f38" text-anchor="middle">${d}</text>`; }));
+    s += `<path d="M85 74 H175 V102 H85 Z" fill="none" stroke="#2b2f38" stroke-width="2.4"/>`;
+    s += `<rect x="236" y="54" width="54" height="74" rx="8" fill="#111"/><text x="263" y="114" font-family="Dela Gothic One, sans-serif" font-size="56" fill="#fff" text-anchor="middle">6</text>`;
+    return s;
+  }
+  return `<rect width="${W}" height="${H}" fill="#e6e9ef"/>`;
+}
+
+/* ---------------- 一覧 ---------------- */
+const RECORD_URL = (window.YATARA && window.YATARA.recordUrl) || '';
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const card = (g, i) => `
+  <li><a class="card" href="${esc(g.url)}">
+    <svg class="art" viewBox="0 0 320 180" role="img" aria-label="${esc(g.title)}の盤">${art(g.art)}</svg>
+    <div class="body">
+      <div class="title-row"><h3>${esc(g.title)}</h3>${g.isNew ? '<span class="badge">NEW</span>' : ''}</div>
+      <p class="desc">${esc(g.desc)}</p>
+      <ul class="chips">${(g.tags || []).map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+      ${g.record ? `<p class="champs" id="champs${i}"></p>` : ''}
+      <span class="play">遊ぶ →</span>
+    </div>
+  </a></li>`;
+// unknown group ids fall into the last section so a typo never hides a game
+const groupOf = g => GROUPS.some(x => x.id === g.group) ? g.group : GROUPS[GROUPS.length - 1].id;
+const shown = GROUPS.map(gr => ({ gr, list: GAMES.map((g, i) => [g, i]).filter(([g]) => groupOf(g) === gr.id) })).filter(x => x.list.length);
+document.getElementById('groups').innerHTML = shown.map(({ gr, list }) => `
+  <section class="group" id="g-${esc(gr.id)}" aria-labelledby="h-${esc(gr.id)}">
+    <div class="group-head"><h2 id="h-${esc(gr.id)}">${esc(gr.title)}</h2>${gr.sub ? `<p>${esc(gr.sub)}</p>` : ''}</div>
+    <ul class="grid">${list.map(([g, i]) => card(g, i)).join('')}</ul>
+  </section>`).join('');
+document.getElementById('jump').innerHTML = shown.map(({ gr, list }) => `<li><a href="#g-${esc(gr.id)}">${esc(gr.title)} <small>${list.length}</small></a></li>`).join('');
+const yt = window.YATARA && window.YATARA.youtube;
+if (yt) { const a = document.getElementById('ytLink'); a.href = yt; a.hidden = false; }
+// how many people have beaten 最強 (games that use the shared record keeper)
+if (RECORD_URL) GAMES.forEach((g, i) => {
+  if (!g.record) return;
+  fetch(RECORD_URL + (RECORD_URL.includes('?') ? '&' : '?') + 'game=' + encodeURIComponent(g.record))
+    .then(r => r.json()).then(j => {
+      let n = 0, games = 0; for (const v in j.champions || {}) n += j.champions[v].length; for (const v in j.stats || {}) games += j.stats[v].games;
+      const el = document.getElementById('champs' + i);
+      if (el) el.textContent = `最強に勝った人 ${n}人 ・ 挑戦 ${games}局`;
+    }).catch(() => {});
+});
+</script>
+</body>
+</html>
