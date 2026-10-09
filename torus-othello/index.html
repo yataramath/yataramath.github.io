@@ -67,6 +67,8 @@ button,input{font:inherit;color:inherit}
 .home small{font-weight:500;color:var(--muted)}
 .home:hover span{text-decoration:underline}
 .home:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+/* the English site name is long: on phones it takes two short lines instead of being cut off */
+@media (max-width: 520px){ html[lang="en"] .home span{white-space:normal;line-height:1.2;font-size:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical} html[lang="en"] .home small{display:none} }
 .bar-tools{display:flex;gap:8px;flex:none}
 .app{height:calc(100vh - 52px);height:calc(100svh - 52px);min-height:600px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;padding-block:16px;padding-inline:16px}
 
@@ -79,6 +81,7 @@ button,input{font:inherit;color:inherit}
 .brand h1{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(26px,3.1vw,40px);line-height:1.05;letter-spacing:.02em;text-wrap:balance}
 .brand h1 span{color:var(--felt-ink)}
 .brand p{margin:0;font-family:var(--f-mono);font-size:12px;color:var(--muted);letter-spacing:.02em}
+.brand p span{white-space:nowrap}
 
 .tool{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;background:var(--panel)}
 .tool:hover{border-color:var(--ink)}
@@ -196,24 +199,33 @@ html[lang="en"] .toast{white-space:normal;width:max-content;text-align:center;li
 .online-status{margin:0;font-size:13px}
 .online-status b{color:var(--accent)}
 
-/* small net */
-.net-box{display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px;align-items:start}
-.net{display:grid;grid-template-columns:.5fr repeat(8,1fr) .5fr;grid-template-rows:.5fr repeat(6,1fr) .5fr;aspect-ratio:9/7;gap:1px;
-  background:var(--felt-line);border:1.5px solid var(--felt-line);border-radius:5px;overflow:hidden;width:100%}
+/* flat map: a small card in the top-right corner of the 3D view, with two cells of the board's continuation around it */
+.minimap{position:absolute;top:14px;right:14px;z-index:3;width:min(250px,36%);padding:8px 9px 9px;border-radius:14px;border:1px solid var(--line);
+  background:var(--panel);background:color-mix(in srgb,var(--panel) 88%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 6px 18px var(--shadow)}
+.mm-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:0 0 6px;font-size:12px;font-weight:700;color:var(--ink)}
+.mm-toggle{width:24px;height:24px;border-radius:7px;border:1px solid var(--line);background:transparent;cursor:pointer;display:grid;place-items:center;font-size:15px;line-height:1;color:var(--muted)}
+.mm-toggle:hover{border-color:var(--ink);color:var(--ink)}
+.mm-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.minimap.min{width:auto}
+.minimap.min .mm-head{margin:0}
+.minimap.min .net,.minimap.min .mm-note{display:none}
+.mm-note{margin:6px 0 0;font-size:10.5px;line-height:1.45;color:var(--muted)}
+@container stage (max-width: 700px){ .minimap{width:min(168px,42%);top:10px;right:10px;padding:6px 7px 7px} .mm-note{display:none}
+  .brand{max-width:calc(100% - min(168px,42%) - 34px)} .brand h1{font-size:clamp(20px,6.6cqi,26px)} }
+.net{display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(10,1fr);aspect-ratio:12/10;gap:1px;
+  background:var(--felt-line);border:1.5px solid var(--felt-line);border-radius:5px;overflow:hidden;width:100%;touch-action:manipulation}
 .cell,.ghost{position:relative;background:var(--felt);display:grid;place-items:center;overflow:hidden;min-width:0;min-height:0}
 .cell{border:0;padding:0;cursor:pointer}
 .cell:focus-visible{outline:2px solid var(--stone-w-hi);outline-offset:-2px;z-index:2}
-.cell.hover{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.cell.hover,.ghost.hover{box-shadow:inset 0 0 0 1.5px var(--accent)}
 .stone{width:76%;aspect-ratio:1;border-radius:50%;display:none}
-[data-s="b"] > .stone,[data-s="b"] .stone{display:block;background:radial-gradient(circle at 34% 30%,var(--stone-b-hi),var(--stone-b) 64%)}
-[data-s="w"] > .stone,[data-s="w"] .stone{display:block;background:radial-gradient(circle at 34% 30%,var(--stone-w-hi),var(--stone-w) 72%)}
-.cell.hint::after{content:"";position:absolute;width:28%;aspect-ratio:1;border-radius:50%;background:var(--accent)}
-.cell.last .stone{box-shadow:0 0 0 1.5px var(--accent)}
-.cell.pv .stone{box-shadow:0 0 0 2px var(--accent)}
-.ghost{opacity:.4;pointer-events:none}
-.ghost .gi{position:absolute;display:grid;place-items:center}
-.net-text{display:grid;gap:4px;font-size:12px;color:var(--muted);line-height:1.5}
-.net-text b{color:var(--ink);font-weight:700;font-size:12.5px}
+[data-s="b"] > .stone{display:block;background:radial-gradient(circle at 34% 30%,var(--stone-b-hi),var(--stone-b) 64%)}
+[data-s="w"] > .stone{display:block;background:radial-gradient(circle at 34% 30%,var(--stone-w-hi),var(--stone-w) 72%)}
+.cell.hint::after,.ghost.hint::after{content:"";position:absolute;width:28%;aspect-ratio:1;border-radius:50%;background:var(--accent)}
+.cell.last .stone,.ghost.last .stone{box-shadow:0 0 0 1.5px var(--accent)}
+.cell.pv .stone,.ghost.pv .stone{box-shadow:0 0 0 2px var(--accent)}
+.ghost{opacity:.42;cursor:pointer}
+.net-frame{grid-area:3/3/9/11;pointer-events:none;z-index:1;border-radius:2px;box-shadow:0 0 0 2px var(--accent)}
 
 .rules summary{cursor:pointer;font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--muted);list-style:none;display:flex;align-items:center;gap:6px}
 .rules summary::-webkit-details-marker{display:none}
@@ -258,7 +270,6 @@ html[lang="en"] .toast{white-space:normal;width:max-content;text-align:center;li
 }
 @media (max-width: 420px){
   .home small{display:none}
-  .net-box{grid-template-columns:120px minmax(0,1fr)}
   .seg label{padding:4px 9px}
 }
 @media (prefers-reduced-motion: reduce){
@@ -272,7 +283,7 @@ html[lang="en"] .toast{white-space:normal;width:max-content;text-align:center;li
 <header class="sitebar">
   <a class="home" href="https://yataramath.github.io/" target="_top">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
-    <span data-en-html="Yatara Game Room <small>all games</small>">やたら楽しいゲーム部屋 <small>ゲーム一覧</small></span>
+    <span data-en-html="Board Games from Another Dimension <small>all games</small>">異次元のボードゲーム部屋 <small>ゲーム一覧</small></span>
   </a>
   <div class="bar-tools">
     <button type="button" class="tool lang-tool" id="langBtn" data-i18n-skip>EN</button>
@@ -292,6 +303,11 @@ html[lang="en"] .toast{white-space:normal;width:max-content;text-align:center;li
       <h1 data-en-html="Torus <span>Othello</span>">トーラス<span>オセロ</span></h1>
       <p id="brandDims">8 × 6 = 48マス</p>
     </header>
+    <aside class="minimap" id="minimap" aria-labelledby="netTitle">
+      <div class="mm-head"><span id="netTitle" data-en="Flat map">展開図</span><button type="button" class="mm-toggle" id="mmToggle" aria-expanded="true" aria-label="展開図を小さくする">−</button></div>
+      <div class="net" id="net" role="grid" aria-label="盤面の展開図。矢印キーで移動、Enterで置く" data-en-attr="aria-label:Flat map of the board. Arrow keys move, Enter plays"></div>
+      <p class="mm-note" id="netNote"></p>
+    </aside>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="viewpad" role="group" aria-label="視点の操作" data-en-attr="aria-label:View controls">
       <div class="vp" title="表面を小さい輪の向きに送ります。内側のマスを手前に出せます。" data-en-attr="title:Rolls the surface along the small ring, bringing the inner cells to the front.">
@@ -398,17 +414,6 @@ html[lang="en"] .toast{white-space:normal;width:max-content;text-align:center;li
       <div class="actions">
         <button type="button" class="btn ghost-btn" id="undo" data-en="Undo">待った</button>
         <button type="button" class="btn solid" id="newGame" data-en="New game">新しいゲーム</button>
-      </div>
-    </section>
-
-    <section aria-labelledby="netTitle">
-      <div class="net-box">
-        <div class="net" id="net" role="grid" aria-label="盤面の展開図。矢印キーで移動、Enterで置く" data-en-attr="aria-label:Flat map of the board. Arrow keys move, Enter plays"></div>
-        <div class="net-text">
-          <b id="netTitle" data-en="Flat map">展開図</b>
-          <span id="netNote"></span>
-          <span data-en="You can also click here to play.">ここをクリックしても置けます。</span>
-        </div>
       </div>
     </section>
 
@@ -1563,37 +1568,37 @@ const oppAway = (g = G()) => !!(g.online && g.online.players.some(p => p.left &&
 const netWaiting = (g = G()) => g.mode === 'online' && !!g.online && g.online.status !== 'playing' && !g.over;
 
 /* ================= net ================= */
+const NET_M = 2;   // cells of the board's continuation drawn around the flat map
 const netEl = $('net'), cells = new Array(N), ghosts = [];
 (function buildNet() {
-  for (let dr = -1; dr <= NV; dr++) for (let dc = -1; dc <= NU; dc++) {
+  for (let dr = -NET_M; dr < NV + NET_M; dr++) for (let dc = -NET_M; dc < NU + NET_M; dc++) {
     const isGhost = dr < 0 || dr >= NV || dc < 0 || dc >= NU;
     const jRaw = NV - 1 - dr;
+    let el;
     if (!isGhost) {
       const k = kOf(dc, jRaw);
-      const b = document.createElement('button');
-      b.type = 'button'; b.className = 'cell'; b.dataset.k = k; b.tabIndex = -1;
-      b.setAttribute('role', 'gridcell');
-      b.innerHTML = '<span class="stone"></span>';
-      netEl.append(b); cells[k] = b;
+      el = document.createElement('button');
+      el.type = 'button'; el.className = 'cell'; el.dataset.k = k; el.tabIndex = -1;
+      el.setAttribute('role', 'gridcell');
+      cells[k] = el;
     } else {
-      const g = document.createElement('div');
-      g.className = 'ghost'; g.setAttribute('aria-hidden', 'true');
-      const gi = document.createElement('div'); gi.className = 'gi';
-      const hx = dc < 0 || dc >= NU, hy = dr < 0 || dr >= NV;
-      gi.style.width = hx ? '200%' : '100%'; gi.style.height = hy ? '200%' : '100%';
-      if (dc < 0) gi.style.right = '0'; else gi.style.left = '0';
-      if (dr < 0) gi.style.bottom = '0'; else gi.style.top = '0';
-      gi.innerHTML = '<span class="stone"></span>';
-      g.append(gi); netEl.append(g); ghosts.push({ el: gi, dc, j: jRaw, k: -1 });
+      el = document.createElement('div');
+      el.className = 'ghost'; el.setAttribute('aria-hidden', 'true');
+      ghosts.push({ el, dc, j: jRaw, k: -1 });
     }
+    el.innerHTML = '<span class="stone"></span>';
+    el.style.gridArea = `${dr + NET_M + 1} / ${dc + NET_M + 1}`;
+    netEl.append(el);
   }
+  const fr = document.createElement('div'); fr.className = 'net-frame'; fr.setAttribute('aria-hidden', 'true');
+  netEl.append(fr);
 })();
 function mapGhosts() {   // which real cell each faded edge cell shows (depends on the twist)
   const T = cur;
   for (const g of ghosts) {
     let i = g.dc, j = g.j;
     if (i < 0) { i += NU; j -= T; } else if (i >= NU) { i -= NU; j += T; }
-    g.k = kOf(i, mod(j, NV));
+    g.k = kOf(i, mod(j, NV)); g.el.dataset.k = g.k;
   }
 }
 let focusK = kOf(3, 3);
@@ -1620,7 +1625,12 @@ function renderNet() {
     c.classList.toggle('pv', pv.has(k));
     c.setAttribute('aria-label', `${label(k)} ${v === BLACK ? L('黒', 'Black') : v === WHITE ? L('白', 'White') : UI.legalSet.has(k) ? L('空き・置ける', 'empty, legal move') : L('空き', 'empty')}`);
   }
-  for (const gh of ghosts) { const v = g.board[gh.k]; gh.el.dataset.s = v === BLACK ? 'b' : v === WHITE ? 'w' : ''; }
+  for (const gh of ghosts) {   // the faded border copies the real cell it continues
+    if (gh.k < 0) continue;
+    const c = cells[gh.k], e = gh.el;
+    e.dataset.s = c.dataset.s;
+    for (const cl of ['hint', 'last', 'hover', 'pv']) e.classList.toggle(cl, c.classList.contains(cl));
+  }
 }
 function roleText(g, color) {
   if (g.mode === 'pvp' || (g.mode === 'online' && !g.online)) return color === BLACK ? L('先手', '1st player') : L('後手', '2nd player');
@@ -1686,9 +1696,10 @@ function renderSettings() {
 function renderVariant() {
   $('tabTorus').setAttribute('aria-selected', String(cur === 0));
   $('tabTwist').setAttribute('aria-selected', String(cur === 1));
-  // (English: no-break spaces inside each part, so a narrow screen wraps only between parts)
-  $('brandDims').textContent = cur === 1 ? L('ねじれトーラス ・ 8 × 6 = 48マス ・ 1周で1マスずれる', ['Twisted torus', '8 × 6 = 48 cells', 'shifts 1 cell per lap'].map(x => x.replace(/ /g, '\u00a0')).join('\u00a0· '))
-    : L('トーラス ・ 8 × 6 = 48マス ・ S¹ × S¹', 'Torus · 8 × 6 = 48 cells · S¹ × S¹');
+  // each part stays on one line, so a narrow screen wraps only between parts
+  const dims = parts => parts.map(x => `<span>${x}</span>`).join(L(' ・ ', ' · '));
+  $('brandDims').innerHTML = cur === 1 ? dims(L(['ねじれトーラス', '8 × 6 = 48マス', '1周で1マスずれる'], ['Twisted torus', '8 × 6 = 48 cells', 'shifts 1 cell per lap']))
+    : dims(L(['トーラス', '8 × 6 = 48マス', 'S¹ × S¹'], ['Torus', '8 × 6 = 48 cells', 'S¹ × S¹']));
   $('showSpiral').hidden = cur !== 1;
   $('variantNote').textContent = cur === 1
     ? L('大きい輪を1周すると、1マスずれてつながります。大きい輪の向きの列は、48マス全部を通る1本のらせんです。',
@@ -1696,10 +1707,10 @@ function renderVariant() {
     : L('大きい輪を8等分、小さい輪を6等分。端がなく、どの列も一周してつながっています。',
       'The big ring is cut into 8, the small ring into 6. No edges: every line wraps all the way around.');
   $('netNote').textContent = cur === 1
-    ? L('→ 大きい輪　↑ 小さい輪。外の薄いマスは反対側の端です。左右の端は1マスずれてつながります。',
-      '→ big ring  ↑ small ring. The faded cells outside show the opposite edge. Left and right join shifted by one cell.')
-    : L('→ 大きい輪　↑ 小さい輪。外の薄いマスは反対側の端で、上下・左右がつながっています。',
-      '→ big ring  ↑ small ring. The faded cells outside show the opposite edge: top joins bottom, left joins right.');
+    ? L('→ 大きい輪　↑ 小さい輪。枠の外の薄いマスは反対側の端の続きで、左右は1マスずれてつながります。ここを押しても置けます。',
+      '→ big ring  ↑ small ring. The faded cells continue from the opposite edge; left and right join shifted by one cell. You can play here too.')
+    : L('→ 大きい輪　↑ 小さい輪。枠の外の薄いマスは、反対側の端の続きです。ここを押しても置けます。',
+      '→ big ring  ↑ small ring. The faded cells show the board continuing from the opposite edge. You can play here too.');
   const K = KOMI[cur], needB = Math.floor((N - K) / 2) + 1, needW = Math.ceil((N + K) / 2);
   const sabaki = '<a href="https://github.com/SabakiHQ/Sabaki" target="_blank" rel="noopener">Sabaki</a>';
   $('rulesList').innerHTML = (LANG === 'en' ? [
@@ -1741,6 +1752,7 @@ function setHover(k, force = false) {
   V.setPreview(UI.preview);
   const pv = new Set(UI.preview);
   for (let q = 0; q < N; q++) { cells[q].classList.toggle('hover', q === k); cells[q].classList.toggle('pv', pv.has(q)); }
+  for (const gh of ghosts) { gh.el.classList.toggle('hover', gh.k === k); gh.el.classList.toggle('pv', pv.has(gh.k)); }
 }
 
 /* ================= moves ================= */
@@ -2187,9 +2199,19 @@ V.onTap = (k, type) => {
 };
 V.onHover = k => setHover(k);
 
-netEl.addEventListener('click', e => { const b = e.target.closest('.cell'); if (b) tryMove(+b.dataset.k); });
-netEl.addEventListener('pointerover', e => { const b = e.target.closest('.cell'); if (b && e.pointerType === 'mouse') setHover(+b.dataset.k); });
+// the faded border cells play too: each one stands for the real cell it continues
+netEl.addEventListener('click', e => { const b = e.target.closest('.cell,.ghost'); if (b && b.dataset.k) tryMove(+b.dataset.k); });
+netEl.addEventListener('pointerover', e => { const b = e.target.closest('.cell,.ghost'); if (b && b.dataset.k && e.pointerType === 'mouse') setHover(+b.dataset.k); });
 netEl.addEventListener('pointerleave', () => setHover(-1));
+// the flat map can be folded away (remembered on this device)
+function paintMM() {
+  const mm = $('minimap'), bt = $('mmToggle'), min = mm.classList.contains('min');
+  bt.textContent = min ? '+' : '−'; bt.setAttribute('aria-expanded', String(!min));
+  bt.setAttribute('aria-label', min ? L('展開図を開く', 'Open the flat map') : L('展開図を小さくする', 'Collapse the flat map'));
+}
+if (store.get('netMin', false)) $('minimap').classList.add('min');
+$('mmToggle').addEventListener('click', () => { const mm = $('minimap'); mm.classList.toggle('min'); store.set('netMin', mm.classList.contains('min')); paintMM(); });
+paintMM();
 netEl.addEventListener('focusin', e => { const b = e.target.closest('.cell'); if (b) setHover(+b.dataset.k); });
 netEl.addEventListener('focusout', () => setHover(-1));
 netEl.addEventListener('keydown', e => {
@@ -2249,7 +2271,7 @@ function setLang(l) {
   LANG = l === 'en' ? 'en' : 'ja';
   try { localStorage.setItem(LANG_KEY, LANG); } catch (e) {}
   applyStaticLang();
-  renderVariant(); refresh(); renderHall(); paintSound(); paintResult();
+  renderVariant(); refresh(); renderHall(); paintSound(); paintResult(); paintMM();
   if (onlineMsg) setOnline(onlineMsg);
   if (nameMsgF) setNameMsg(nameMsgF);
 }

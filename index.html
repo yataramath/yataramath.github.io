@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>やたら楽しいゲーム部屋</title>
-<meta name="description" content="やたら楽しいゲーム部屋：YouTube「やたら楽しい数学」のゲームが全部ここで遊べます。トーラス囲碁、トーラスオセロ、立体リバーシ、6（ロク）など。">
+<title>異次元のボードゲーム部屋</title>
+<meta name="description" content="異次元のボードゲーム部屋：YouTube「やたら楽しい数学」のゲームが全部ここで遊べます。トーラス囲碁、トーラスオセロ、立体リバーシ、6（ロク）など。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=IBM+Plex+Mono:wght@500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
@@ -80,7 +80,7 @@ footer p{margin:0}
 <div class="wrap">
   <header class="top">
     <div class="top-row">
-      <p class="eyebrow">YATARA TANOSHII GAME ROOM</p>
+      <p class="eyebrow">YATARA TANOSHII SUGAKU</p>
       <button type="button" class="lang" id="langBtn">EN</button>
     </div>
     <h1 id="title"></h1>
@@ -210,8 +210,8 @@ const groupOf = g => GROUPS.some(x => x.id === g.group) ? g.group : GROUPS[GROUP
 const shown = GROUPS.map(gr => ({ gr, list: GAMES.map((g, i) => [g, i]).filter(([g]) => groupOf(g) === gr.id) })).filter(x => x.list.length);
 function render() {
   document.documentElement.lang = LANG;
-  document.title = L('やたら楽しいゲーム部屋', 'Yatara Game Room');
-  $('title').innerHTML = L('やたら楽しい<em>ゲーム部屋</em>', 'Yatara <em>Game Room</em>');
+  document.title = L('異次元のボードゲーム部屋', 'Board Games from Another Dimension');
+  $('title').innerHTML = L('異次元の<em>ボードゲーム部屋</em>', 'Board Games from <em>Another Dimension</em>');
   $('lead').textContent = L('YouTube「やたら楽しい数学」で遊んでいる、ちょっと変わった盤のゲームを集めた部屋です。どれもブラウザですぐ遊べて、部屋の名前を合わせれば離れた人ともオンラインで対戦できます。CPUの最強に勝つと、各ゲームのページの下に名前が残ります。',
     'A room full of odd little board games from the YouTube channel “Yatara Tanoshii Sugaku” (Ridiculously Fun Math). They all run right in your browser, and if you and a friend enter the same room name you can play each other online. Beat the Strongest CPU and your name goes into that game’s hall of fame.');
   $('ytText').textContent = L('YouTubeチャンネルへ', 'YouTube channel');

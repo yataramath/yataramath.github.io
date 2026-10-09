@@ -64,6 +64,8 @@ button,input{font:inherit;color:inherit}
 .home small{font-weight:500;color:var(--muted)}
 .home:hover span{text-decoration:underline}
 .home:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+/* the English site name is long: on phones it takes two short lines instead of being cut off */
+@media (max-width: 520px){ html[lang="en"] .home span{white-space:normal;line-height:1.2;font-size:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical} html[lang="en"] .home small{display:none} }
 .bar-tools{display:flex;gap:8px;flex:none}
 .tool{width:38px;height:38px;border-radius:11px;border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;background:var(--panel)}
 .tool:hover{border-color:var(--ink)}
@@ -85,6 +87,7 @@ button,input{font:inherit;color:inherit}
 .brand h1{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(26px,3.1vw,40px);line-height:1.05;letter-spacing:.02em}
 .brand h1 span{color:var(--wood-ink)}
 .brand p{margin:0;font-family:var(--f-mono);font-size:12px;color:var(--muted);letter-spacing:.02em}
+.brand p span{white-space:nowrap}
 .toast{position:absolute;left:50%;top:20px;transform:translate(-50%,-6px);opacity:0;pointer-events:none;
   background:var(--ink);color:var(--bg);font-weight:700;font-size:14px;padding:8px 18px;border-radius:999px;
   white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis;transition:opacity .22s,transform .22s;
@@ -190,10 +193,20 @@ html[lang="en"] .seg label{padding:4px 8px}
 .online-status{margin:0;font-size:13px}
 .online-status b{color:var(--accent)}
 
-.net-box{display:grid;grid-template-columns:140px minmax(0,1fr);gap:12px;align-items:start}
+/* flat map: a small card in the top-right corner of the 3D view, with two rows of the board's continuation around it */
+.minimap{position:absolute;top:14px;right:14px;z-index:3;width:min(250px,36%);padding:8px 9px 9px;border-radius:14px;border:1px solid var(--line);
+  background:var(--panel);background:color-mix(in srgb,var(--panel) 88%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 6px 18px var(--shadow)}
+.mm-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:0 0 6px;font-size:12px;font-weight:700;color:var(--ink)}
+.mm-toggle{width:24px;height:24px;border-radius:7px;border:1px solid var(--line);background:transparent;cursor:pointer;display:grid;place-items:center;font-size:15px;line-height:1;color:var(--muted)}
+.mm-toggle:hover{border-color:var(--ink);color:var(--ink)}
+.mm-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.minimap.min{width:auto}
+.minimap.min .mm-head{margin:0}
+.minimap.min .net,.minimap.min .mm-note{display:none}
+.mm-note{margin:6px 0 0;font-size:10.5px;line-height:1.45;color:var(--muted)}
+@container stage (max-width: 700px){ .minimap{width:min(168px,42%);top:10px;right:10px;padding:6px 7px 7px} .mm-note{display:none}
+  .brand{max-width:calc(100% - min(168px,42%) - 34px)} .brand h1{font-size:clamp(20px,6.6cqi,26px)} }
 .net{width:100%;height:auto;display:block;border-radius:6px;background:var(--wood);cursor:pointer;touch-action:manipulation}
-.net-text{display:grid;gap:4px;font-size:12px;color:var(--muted);line-height:1.5}
-.net-text b{color:var(--ink);font-weight:700;font-size:12.5px}
 
 .rules summary{cursor:pointer;font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--muted);list-style:none;display:flex;align-items:center;gap:6px}
 .rules summary::-webkit-details-marker{display:none}
@@ -235,7 +248,7 @@ html[lang="en"] .seg label{padding:4px 8px}
   .stage{height:62vh;height:min(62svh,620px);min-height:360px}
   .side{overflow:visible}
 }
-@media (max-width: 420px){ .net-box{grid-template-columns:120px minmax(0,1fr)} .seg label{padding:4px 8px} .home small{display:none} }
+@media (max-width: 420px){ .seg label{padding:4px 8px} .home small{display:none} }
 @media (prefers-reduced-motion: reduce){ .toast,.player{transition:none} .dots::after{animation:none;content:"…"} }
 </style>
 <script src="../config.js"></script>
@@ -244,7 +257,7 @@ html[lang="en"] .seg label{padding:4px 8px}
 <header class="sitebar">
   <a class="home" href="https://yataramath.github.io/" target="_top" id="homeLink">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
-    <span data-en-html="Yatara Game Room &lt;small&gt;all games&lt;/small&gt;">やたら楽しいゲーム部屋 <small>ゲーム一覧</small></span>
+    <span data-en-html="Board Games from Another Dimension &lt;small&gt;all games&lt;/small&gt;">異次元のボードゲーム部屋 <small>ゲーム一覧</small></span>
   </a>
   <div class="bar-tools">
     <button type="button" class="tool lang-tool" id="langBtn" data-i18n-skip>EN</button>
@@ -264,6 +277,11 @@ html[lang="en"] .seg label{padding:4px 8px}
       <h1 data-en-html="Torus &lt;span&gt;Go&lt;/span&gt;">トーラス<span>囲碁</span></h1>
       <p id="brandDims">トーラス ・ 9 × 9 = 81路</p>
     </header>
+    <aside class="minimap" id="minimap" aria-labelledby="netTitle">
+      <div class="mm-head"><span id="netTitle" data-en="Flat map">展開図</span><button type="button" class="mm-toggle" id="mmToggle" aria-expanded="true" aria-label="展開図を小さくする">−</button></div>
+      <svg class="net" id="net" viewBox="0 0 100 100" role="img" aria-label="盤面の展開図" data-en-attr="aria-label:Flat map of the board"></svg>
+      <p class="mm-note" id="netNote"></p>
+    </aside>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="viewpad" role="group" aria-label="視点の操作" data-en-attr="aria-label:View controls">
       <div class="vp" title="表面を小さい輪の向きに送ります。内側を手前に出せます。" data-en-attr="title:Rolls the surface along the small ring (through the hole), bringing the inner side to the front.">
@@ -372,16 +390,6 @@ html[lang="en"] .seg label{padding:4px 8px}
       </div>
     </section>
 
-    <section aria-labelledby="netTitle">
-      <div class="net-box">
-        <svg class="net" id="net" viewBox="0 0 100 100" role="img" aria-label="盤面の展開図" data-en-attr="aria-label:Flat map of the board"></svg>
-        <div class="net-text">
-          <b id="netTitle" data-en="Flat map">展開図</b>
-          <span id="netNote"></span>
-          <span data-en="You can also click here to play.">ここをクリックしても打てます。</span>
-        </div>
-      </div>
-    </section>
 
     <details class="rules" id="rules">
       <summary data-en="Rules">ルール</summary>
@@ -1550,29 +1558,36 @@ function scoreNow(g) { const s = E().scoreArea(g.b); return { b: s.b, w: s.w, ow
 
 /* ================= net (small SVG) ================= */
 const netEl = $('net');
+const NET_M = 2;                     // rows of the board's continuation drawn around the flat map
+// a cell of the extended map (i, j may run 2 past each edge) -> the real point it shows (left/right edges join shifted by the twist)
+function wrapPoint(i, j, N = curN, T = curT) {
+  if (i < 0) { i += N; j -= T; } else if (i >= N) { i -= N; j += T; }
+  return mod(j, N) * N + i;
+}
 function renderNet() {
-  const g = G(), N = curN, sp = 100 / N, b = g.b;
+  const g = G(), N = curN, W = N + 2 * NET_M, sp = 100 / W, b = g.b;
+  const X = i => (i + NET_M + 0.5) * sp, Y = j => 100 - (j + NET_M + 0.5) * sp;
   let h = `<rect x="0" y="0" width="100" height="100" fill="var(--wood)"/>`;
-  for (let k = 0; k < N; k++) {
-    const x = (k + 0.5) * sp;
-    h += `<line x1="${x}" y1="0" x2="${x}" y2="100" stroke="#2a1b0b" stroke-width="${N === 9 ? 0.5 : 0.35}"/><line x1="0" y1="${x}" x2="100" y2="${x}" stroke="#2a1b0b" stroke-width="${N === 9 ? 0.5 : 0.35}"/>`;
+  const sw = N === 9 ? 0.45 : 0.32;
+  for (let k = -NET_M; k < N + NET_M; k++) h += `<line x1="${X(k)}" y1="0" x2="${X(k)}" y2="100" stroke="#2a1b0b" stroke-width="${sw}"/><line x1="0" y1="${Y(k)}" x2="100" y2="${Y(k)}" stroke="#2a1b0b" stroke-width="${sw}"/>`;
+  const rad = sp * 0.44, lm = b.last;
+  for (let j = -NET_M; j < N + NET_M; j++) for (let i = -NET_M; i < N + NET_M; i++) {
+    const p = wrapPoint(i, j), c = b.c[p];
+    if (!c) continue;
+    h += `<circle cx="${X(i)}" cy="${Y(j)}" r="${rad}" fill="${c === BLACK ? '#16181c' : '#f3f1ea'}" stroke="${c === BLACK ? '#000' : '#9a9486'}" stroke-width="0.25"/>`;
+    if (p === lm) h += `<circle cx="${X(i)}" cy="${Y(j)}" r="${rad * 0.38}" fill="none" stroke="${c === BLACK ? '#fff' : '#111'}" stroke-width="0.6"/>`;
   }
-  if (curT) h += `<path d="M0.8 ${100 - sp * 0.5} v-${sp} M99.2 ${100 - sp * 1.5} v${sp}" stroke="var(--accent)" stroke-width="1.2"/>`;
-  const rad = sp * 0.44;
-  for (let p = 0; p < N * N; p++) {
-    const c = b.c[p]; if (!c) continue;
-    const x = (p % N + 0.5) * sp, y = 100 - (((p / N) | 0) + 0.5) * sp;
-    h += `<circle cx="${x}" cy="${y}" r="${rad}" fill="${c === BLACK ? '#16181c' : '#f3f1ea'}" stroke="${c === BLACK ? '#000' : '#9a9486'}" stroke-width="0.25"/>`;
-  }
-  const lm = g.b.last;
-  if (lm >= 0 && b.c[lm]) { const x = (lm % N + 0.5) * sp, y = 100 - (((lm / N) | 0) + 0.5) * sp; h += `<circle cx="${x}" cy="${y}" r="${rad * 0.38}" fill="none" stroke="${b.c[lm] === BLACK ? '#fff' : '#111'}" stroke-width="0.6"/>`; }
-  if (UI.hover >= 0) { const x = (UI.hover % N + 0.5) * sp, y = 100 - (((UI.hover / N) | 0) + 0.5) * sp; h += `<circle cx="${x}" cy="${y}" r="${rad}" fill="none" stroke="var(--accent)" stroke-width="0.8"/>`; }
+  if (UI.hover >= 0) for (let j = -NET_M; j < N + NET_M; j++) for (let i = -NET_M; i < N + NET_M; i++) if (wrapPoint(i, j) === UI.hover) h += `<circle cx="${X(i)}" cy="${Y(j)}" r="${rad}" fill="none" stroke="var(--accent)" stroke-width="0.8"/>`;
+  // the continuation is faded; the real board keeps its frame
+  const e0 = NET_M * sp, e1 = 100 - NET_M * sp;
+  h += `<path d="M0 0H100V100H0Z M${e0} ${e0}V${e1}H${e1}V${e0}Z" fill="var(--panel)" fill-rule="evenodd" opacity=".55"/>`;
+  h += `<rect x="${e0}" y="${e0}" width="${e1 - e0}" height="${e1 - e0}" fill="none" stroke="var(--accent)" stroke-width="0.7"/>`;
   netEl.innerHTML = h;
 }
 function netPoint(e) {
-  const r = netEl.getBoundingClientRect(), N = curN;
-  const i = Math.floor((e.clientX - r.left) / r.width * N), jj = Math.floor((r.bottom - e.clientY) / r.height * N);
-  return i >= 0 && i < N && jj >= 0 && jj < N ? jj * N + i : -1;
+  const r = netEl.getBoundingClientRect(), N = curN, W = N + 2 * NET_M;
+  const i = Math.floor((e.clientX - r.left) / r.width * W) - NET_M, j = Math.floor((r.bottom - e.clientY) / r.height * W) - NET_M;
+  return i >= -NET_M && i < N + NET_M && j >= -NET_M && j < N + NET_M ? wrapPoint(i, j) : -1;
 }
 
 /* ================= rendering ================= */
@@ -1638,12 +1653,13 @@ function renderSettings() {
 function renderVariant() {
   $('tabTorus').setAttribute('aria-selected', String(curT === 0)); $('tabTwist').setAttribute('aria-selected', String(curT === 1));
   $('size9').setAttribute('aria-selected', String(curN === 9)); $('size13').setAttribute('aria-selected', String(curN === 13));
-  $('brandDims').textContent = L(`${curT ? 'ねじれトーラス' : 'トーラス'} ・ ${curN} × ${curN} = ${curN * curN}点`, `${curT ? 'Twisted torus' : 'Torus'} · ${curN} × ${curN} = ${curN * curN} points`);
+  // each part stays on one line, so a narrow screen wraps only between parts
+  $('brandDims').innerHTML = L([curT ? 'ねじれトーラス' : 'トーラス', `${curN} × ${curN} = ${curN * curN}点`], [curT ? 'Twisted torus' : 'Torus', `${curN} × ${curN} = ${curN * curN} points`]).map(x => `<span>${x}</span>`).join(L(' ・ ', ' · '));
   $('showSpiral').hidden = curT !== 1;
   $('variantNote').textContent = curT
     ? L('大きい輪を1周すると、小さい輪の向きに1つずれてつながります。横の線は全部の点を通る1本のらせんです。', 'Once around the big ring, the board joins up shifted one step along the small ring. The horizontal lines become a single spiral through every point.')
     : L('端も隅もない碁盤です。上下・左右がつながっていて、どこに打っても盤の真ん中です。', 'A Go board with no edges or corners. Top joins bottom and left joins right, so wherever you play, you are in the middle of the board.');
-  $('netNote').textContent = curT ? L('左右の端は1つずれてつながります（青い印）。上下はそのままつながります。', 'Left and right edges join shifted by one (blue marks). Top and bottom join straight across.') : L('左右の端どうし、上下の端どうしがつながっています。', 'Left joins right, and top joins bottom.');
+  $('netNote').textContent = curT ? L('枠の外の薄いところは反対側の端の続き。左右は1つずれてつながります。ここを押しても打てます。', 'The faded border continues from the opposite edge; left and right join shifted by one. You can play here too.') : L('枠の外の薄いところは、反対側の端の続きです。ここを押しても打てます。', 'The faded border shows the board continuing from the opposite edge. You can play here too.');
   const K = KOMI[curN];
   const sabaki = '<a href="https://github.com/SabakiHQ/Sabaki" target="_blank" rel="noopener">Sabaki</a>';
   $('rulesList').innerHTML = (LANG === 'en' ? [
@@ -2108,6 +2124,14 @@ V.onTap = (p, type) => {
 };
 V.onHover = p => setHover(p);
 netEl.addEventListener('click', e => { const p = netPoint(e); if (p >= 0) tryMove(p); });
+// the flat map can be folded away (remembered on this device)
+function paintMM() {
+  const mm = $('minimap'), bt = $('mmToggle'), min = mm.classList.contains('min');
+  bt.textContent = min ? '+' : '−'; bt.setAttribute('aria-expanded', String(!min));
+  bt.setAttribute('aria-label', min ? L('展開図を開く', 'Open the flat map') : L('展開図を小さくする', 'Collapse the flat map'));
+}
+if (store.get('netMin', false)) $('minimap').classList.add('min');
+$('mmToggle').addEventListener('click', () => { const mm = $('minimap'); mm.classList.toggle('min'); store.set('netMin', mm.classList.contains('min')); paintMM(); });
 netEl.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') setHover(netPoint(e)); });
 netEl.addEventListener('pointerleave', () => setHover(-1));
 $('rollUp').addEventListener('click', () => V.roll(1)); $('rollDown').addEventListener('click', () => V.roll(-1));
@@ -2163,7 +2187,7 @@ fsBtn.addEventListener('click', () => { if (document.fullscreenElement) document
 function setLang(l) {
   LANG = l; try { localStorage.setItem(LANG_KEY, l); } catch (e) {}
   applyStaticLang();
-  paintSound(); paintNoGL(); paintOnline(); paintNameMsg(); paintResult();
+  paintSound(); paintNoGL(); paintOnline(); paintNameMsg(); paintResult(); paintMM();
   renderVariant(); refresh(); renderHall();
 }
 $('langBtn').addEventListener('click', () => setLang(LANG === 'en' ? 'ja' : 'en'));
@@ -2176,7 +2200,7 @@ function start() {
   $('nickName').value = store.get('lastName', '');
   V.setBoard(curT, curN);
   const g = G(); V.sync(colorsOf(g.b), g.b.last);
-  applyStaticLang(); paintOnline();
+  applyStaticLang(); paintOnline(); paintMM();
   renderVariant(); refresh(); renderHall(); loadHall(); nextTurn();
 }
 start();
