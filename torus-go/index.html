@@ -727,7 +727,7 @@ function createGo(N, T, KOMI) {
 
   /* ---------- Monte-Carlo tree search with RAVE ---------- */
   class Node {
-    constructor(move, color, parent) { this.move = move; this.color = color; this.parent = parent; this.ch = null; this.n = 0; this.w = 0; this.rn = 0; this.rw = 0; }
+    constructor(move, color, parent) { this.move = move; this.color = color; this.parent = parent; this.ch = null; this.n = 0; this.w = 0; this.rn = 0; this.rw = 0; this.wn = 0; this.sd = 0; this.uv = 0; }
   }
   const scratch = new Board();
   const SEQ_P = new Int16Array(4 * NN + 64), SEQ_C = new Uint8Array(4 * NN + 64);
@@ -767,6 +767,14 @@ function createGo(N, T, KOMI) {
   }
   const scratch2 = new Board();
   let RAVE_EQ = 700, C_EXP = 0.0, EXPAND_AT = 3;     // tuned by self-play on 9×9
+  // value of a playout = win/loss. (Mixing in the point margin, even only once the game looked decided, made the CPU
+  // lose more in self-play on 9×9, so it stays off: LAMBDA_DECIDED = 0. The hook is kept for experiments.)
+  let LAMBDA = 0, LAMBDA_DECIDED = 0, SCALE = N <= 9 ? 6 : 10;
+  const OWN_TH = 0.95;                                   // the opponent's area is this settled: a stone thrown in just dies
+  const RESIGN_WIN = 0.02, RESIGN_MARGIN = N <= 9 ? 12 : 25;
+  const utilB = d => (1 - LAMBDA) * (d > 0 ? 1 : 0) + LAMBDA * (0.5 + 0.5 * Math.tanh(d / SCALE));
+  let OWN = null;                                        // ownership accumulated over the playouts of one think()
+  let RESIGN_ON = true, SKIP_ON = true;
   function select(node, cExp) {
     let best = null, bv = -1;
     const lnN = Math.log(node.n + 1);
@@ -779,9 +787,20 @@ function createGo(N, T, KOMI) {
     }
     return best;
   }
-  function winnerOf(b, exact) {
-    const d = exact ? (() => { const s = scoreArea(b); return s.b - s.w; })() : playoutDiff(b);
-    return d - KOMI > 0 ? 1 : 2;
+  // black's margin at the end of a playout; also adds who owns each point to OWN
+  function finalDiff(b, exact) {
+    if (exact) {
+      const s = scoreArea(b);
+      if (OWN) for (let p = 0; p < NN; p++) { const o = s.owner[p]; if (o === 1) OWN[p]++; else if (o === 2) OWN[p]--; }
+      return s.b - s.w;
+    }
+    let d = 0;
+    for (let p = 0; p < NN; p++) {
+      let v = b.c[p];
+      if (!v) { const o = p * 4, a = b.c[NB[o]]; if (a && b.c[NB[o + 1]] === a && b.c[NB[o + 2]] === a && b.c[NB[o + 3]] === a) v = a; }
+      if (v === 1) { d++; if (OWN) OWN[p]++; } else if (v === 2) { d--; if (OWN) OWN[p]--; }
+    }
+    return d;
   }
   function simulate(root, rootBoard) {
     const b = scratch.copyFrom(rootBoard);
@@ -815,17 +834,21 @@ function createGo(N, T, KOMI) {
         if (b.passes >= 2) break;
       }
     }
-    const win = winnerOf(b, terminal);
+    const d = finalDiff(b, terminal) - KOMI, win = d > 0 ? 1 : 2;
+    const vB = utilB(d);
     // backup with all-moves-as-first statistics
     FIRST.fill(0);
     for (let x = len - 1; x >= depth; x--) { const p = SEQ_P[x]; if (p >= 0) FIRST[p] = SEQ_C[x]; }
     for (let dpt = path.length - 1; dpt >= 0; dpt--) {
       const nd = path[dpt];
-      nd.n++; if (nd.color === win) nd.w++;
+      const u = nd.color === 1 ? vB : 1 - vB;
+      nd.n++; nd.w += u; nd.uv += u;
+      if (nd.color === win) nd.wn++;
+      nd.sd += nd.color === 1 ? d : -d;
       if (dpt < depth) { const p = SEQ_P[dpt]; if (p >= 0) FIRST[p] = SEQ_C[dpt]; }
       if (nd.ch && dpt < path.length) {
         for (const ch of nd.ch) {
-          if (ch.move >= 0 && FIRST[ch.move] === ch.color) { ch.rn++; if (ch.color === win) ch.rw++; }
+          if (ch.move >= 0 && FIRST[ch.move] === ch.color) { ch.rn++; ch.rw += ch.color === 1 ? vB : 1 - vB; }
         }
       }
     }
@@ -863,14 +886,78 @@ function createGo(N, T, KOMI) {
     root.n = 1;
     const budget = (lv.time || 5000) * (req.scale || 1), maxP = lv.playouts * (req.scale || 1);
     let sims = 0;
-    while (sims < maxP) {
-      simulate(root, b); sims++;
-      if ((sims & 63) === 0 && now() - t0 > budget) break;
+    OWN = new Float32Array(NN);
+    LAMBDA = 0;
+    const warm = Math.min(400, Math.max(64, maxP * 0.15)), warmT = budget * 0.15;
+    let decided = false;
+    try {
+      while (sims < maxP) {
+        simulate(root, b); sims++;
+        if (!decided && (sims >= warm || ((sims & 63) === 0 && now() - t0 > warmT))) {
+          decided = true;                                    // checked once, early in the search
+          let top = root.ch[0]; for (const ch of root.ch) if (ch.n - ch.pn > top.n - top.pn) top = ch;
+          const wr = top.wn / Math.max(1, top.n - top.pn);
+          if (wr > 0.88 || wr < 0.12) LAMBDA = LAMBDA_DECIDED;
+        }
+        if ((sims & 63) === 0 && now() - t0 > budget) break;
+      }
+    } finally { var own = OWN; OWN = null; }
+    for (let p = 0; p < NN; p++) own[p] /= Math.max(1, sims);
+    const visits = ch => ch.n - ch.pn;
+    const ranked = root.ch.slice().sort((x, y) => visits(y) - visits(x));
+    const best = ranked[0];
+    const stats = root.ch.map(ch => [ch.move, visits(ch), ch.w, ch.wn, ch.sd]);
+    const out = { stats, playouts: sims, winrate: best.wn / Math.max(1, visits(best)), ms: Math.round(now() - t0) };
+    out.margin = best.sd / Math.max(1, visits(best));
+    // hopeless: almost no wins and far behind on average. The page resigns when this holds on two turns in a row
+    out.resign = RESIGN_ON && sims >= 600 && NN - b.ne >= NN * 0.35 && out.winrate < RESIGN_WIN && out.margin < -RESIGN_MARGIN;
+    // a stone thrown into the opponent's settled area just dies: skip such moves
+    const skip = [];
+    if (SKIP_ON) for (const ch of ranked) if (ch.move >= 0 && (c === 1 ? -own[ch.move] : own[ch.move]) >= OWN_TH && !tactical(b, ch.move)) skip.push(ch.move);
+    out.skip = skip;
+    let pick = null;
+    for (const ch of ranked) {
+      if (visits(ch) < 0.25 * visits(best)) break;
+      if (ch.move === PASS || skip.indexOf(ch.move) < 0) { pick = ch; break; }
     }
-    const stats = root.ch.map(ch => [ch.move, ch.n - 10, ch.w - (ch.move === PASS ? (ch.n >= 10 ? 0 : 0) : 0)]);
-    let best = root.ch[0];
-    for (const ch of root.ch) if (ch.n - ch.pn > best.n - best.pn) best = ch;
-    return { move: best.move, stats: root.ch.map(ch => [ch.move, ch.n - ch.pn, ch.w - (ch.n > ch.pn ? 0 : 0)]), playouts: sims, winrate: best.w / best.n, ms: Math.round(now() - t0) };
+    out.move = pick ? pick.move : PASS;
+    // at the very end (almost every empty point settled, or the opponent just passed), a move that only fills
+    // our own settled territory is not worth playing: if passing is as good, just pass
+    let open = 0;
+    for (let e = 0; e < b.ne; e++) if (Math.abs(own[b.emp[e]]) < 0.8) open++;
+    const theEnd = b.passes >= 1 || open <= Math.max(2, Math.round(NN * 0.04));
+    if (SKIP_ON && theEnd && pick && pick.move !== PASS && (c === 1 ? own[pick.move] : -own[pick.move]) >= OWN_TH && !tactical(b, pick.move)) {
+      const pv = passValue(b, c, Math.max(200, Math.min(1500, sims >> 2)));
+      out.passValue = pv; out.moveValue = pick.uv / Math.max(1, visits(pick));
+      out.passOK = pv >= out.moveValue - PASS_EPS;
+      if (out.passOK) out.move = PASS;
+    } else if (!pick) out.passOK = true;
+    return out;
+  }
+  const PASS_EPS = 0.006;
+  const scratch3 = new Board();
+  // average value (for colour c) of passing now, by playouts; exact if the pass ends the game
+  function passValue(b0, c, m) {
+    const u = d => (c === 1 ? utilB(d) : 1 - utilB(d));
+    scratch3.copyFrom(b0); play(scratch3, PASS);
+    if (scratch3.passes >= 2) { const s = scoreArea(scratch3); return u(s.b - s.w - KOMI); }
+    const b = new Board();
+    let sum = 0;
+    for (let i = 0; i < m; i++) {
+      b.copyFrom(scratch3);
+      let k = 0;
+      while (k < MAXLEN) { const p = policyMove(b, b.toMove); if (p !== PASS && !isLegal(b, p, b.toMove)) break; play(b, p); k++; if (b.passes >= 2) break; }
+      sum += u(finalDiff(b, false) - KOMI);
+    }
+    return sum / m;
+  }
+  // a move that captures or rescues stones in atari is never "pointless"
+  function tactical(b, p) {
+    for (let d = 0; d < 4; d++) {
+      const q = NB[p * 4 + d];
+      if (b.c[q] && atariLib(b, b.head[q]) === p) return true;
+    }
+    return false;
   }
   /* where the stones would end up: share of playouts each point finishes as black (+1) or white (-1) */
   function ownership(req, n) {
@@ -891,7 +978,7 @@ function createGo(N, T, KOMI) {
   }
 
   return { N, T, NN, KOMI, PASS, NB, DG, step, Board, play, isLegal, isEye, atariLib, scoreArea, think, ownership, boardFromState, LEVELS,
-    _internal: { policyMove, selfAtari, simulate, Node, expand, seed, playoutDiff, patCode, PAT, setParams(o) { if (o.rave) RAVE_EQ = o.rave; if (o.c != null) C_EXP = o.c; if (o.expand) EXPAND_AT = o.expand; } } };
+    _internal: { policyMove, selfAtari, simulate, Node, expand, seed, playoutDiff, patCode, PAT, setParams(o) { if (o.rave) RAVE_EQ = o.rave; if (o.c != null) C_EXP = o.c; if (o.expand) EXPAND_AT = o.expand; if (o.lambda != null) LAMBDA_DECIDED = o.lambda; if (o.scale) SCALE = o.scale; if (o.noResign) RESIGN_ON = false; if (o.noSkip) SKIP_ON = false; } } };
 }
 
 
@@ -1037,12 +1124,21 @@ self.onmessage = e => {
   function mergeResults(list) {
     if (list[0].own) return list[0];
     if (list.some(r => r.reason === 'win-pass')) return { move: PASS, reason: 'win-pass' };
-    const tot = new Map();
+    const resign = list.every(r => r.resign);                       // every thread agrees it is hopeless
+    const passOK = list.filter(r => r.passOK).length * 2 > list.length;   // most threads: passing is as good as playing on
+    const tot = new Map(), skip = new Set();
     let playouts = 0;
-    for (const r of list) { playouts += r.playouts || 0; for (const [m, n, w] of r.stats || [[r.move, 1, 0]]) { const t = tot.get(m) || [0, 0]; t[0] += n; t[1] += w; tot.set(m, t); } }
-    let best = null, bn = -1;
-    for (const [m, [n, w]] of tot) if (n > bn) { bn = n; best = [m, w / n]; }
-    return { move: best[0], winrate: best[1], playouts };
+    for (const r of list) {
+      playouts += r.playouts || 0;
+      for (const m of r.skip || []) skip.add(m);
+      for (const [m, n, w] of r.stats || [[r.move, 1, 0]]) { const t = tot.get(m) || [0, 0]; t[0] += n; t[1] += w; tot.set(m, t); }
+    }
+    // most visited move, but not one inside an area that is already settled (then the next good one, or pass)
+    const ranked = [...tot].sort((x, y) => y[1][0] - x[1][0]);
+    const top = ranked[0][1][0];
+    let best = [PASS, 0];
+    for (const [m, [n, w]] of ranked) { if (n < 0.25 * top) break; if (m === PASS || !skip.has(m)) { best = [m, w / n]; break; } }
+    return { move: passOK ? PASS : best[0], winrate: best[1], playouts, resign };
   }
   return { ask, cancel, threads: K };
 })();
@@ -1557,6 +1653,7 @@ function renderVariant() {
     `<b>End and scoring</b>: the game ends after two passes in a row. Count your stones on the board plus the empty points surrounded only by your stones (area scoring, as in Chinese rules). White gets <b>komi ${K}</b>; the higher total wins.`,
     '<b>Capture dead stones before you pass.</b> Every stone left on the board is counted as it is. Not sure? “Show territory” gives a rough estimate.',
     'Beat the <b>Strongest</b> CPU to leave your name. No undo against the Strongest.',
+    'The CPU passes once there is nothing useful left to play, and resigns when it is hopelessly behind.',
     `Stone sounds from ${sabaki} (MIT License, © Yichuan Shen).`
   ] : [
     `ドーナツ型の<b>${curN}路盤</b>（${curN}×${curN}＝${curN * curN}点）。端も隅もないので、どの石も上下左右に4つの隣があります。`,
@@ -1565,6 +1662,7 @@ function renderVariant() {
     `<b>終局と数え方</b>：2人続けてパスしたら終局。盤上の自分の石と、自分の石だけに囲まれた空点を数えます（中国ルールと同じ「面積」）。白に<b>コミ${K}</b>を足して、多い方の勝ちです。`,
     '<b>死んでいる石は、取り切ってからパスしてください。</b>盤上に残った石はそのまま数えます。迷ったら「形勢を見る」で目安が出ます。',
     '<b>最強</b>に勝つと名前を残せます。最強戦は待ったなしです。',
+    'CPUは、もう打つ意味のある場所がなくなるとパスし、大差で勝ち目がなくなると投了します。',
     `碁石の音：${sabaki}（MITライセンス, © Yichuan Shen）より。`
   ]).map(x => `<li>${x}</li>`).join('');
 }
@@ -1636,6 +1734,11 @@ function askCPU() {
     setTimeout(() => {
       if (my !== cpuToken || gkey() !== K) return;
       UI.busy = false; UI.thinking = false;
+      if (mv === -2) {                     // hopeless for the CPU two turns running: it resigns (the record keeper reads -2 as "the side to move resigned")
+        g.moves.push(-2);
+        toast(L('CPUが投了しました', 'The CPU resigned'), 'hl', 2600);
+        finish(g.b.toMove); return;
+      }
       if (mv !== PASS && !legal(g, mv)) mv = PASS;
       applyMove(mv, 'cpu');
     }, wait);
@@ -1645,7 +1748,12 @@ function askCPU() {
   const stones = []; for (let p = 0; p < b.c.length; p++) if (b.c[p]) stones.push([p, b.c[p]]);
   const req = { kind: 'think', N: curN, T: curT, komi: KOMI[curN], stones, toMove: b.toMove, ko: b.ko, passes: b.passes, last: b.last, last2: b.last2,
     history: g.history, level: g.mode, override: g.mode === 'max' ? { time: curN === 9 ? 5000 : 6000 } : null };
-  AI.ask(req, g.mode === 'max' ? AI.threads : 1, res => finishMove(res.move));
+  AI.ask(req, g.mode === 'max' ? AI.threads : 1, res => {
+    // resign only when the position looks hopeless on two CPU turns in a row (one bad reading is not enough)
+    if (res.resign && g.hopeless) { finishMove(-2); return; }
+    g.hopeless = !!res.resign;
+    finishMove(res.move);
+  });
 }
 function stopEverything() { clearTimeout(moveTimer); cpuToken++; AI.cancel(); UI.busy = false; UI.thinking = false; V.clearAnims(); }
 function tryMove(p) {
@@ -1690,6 +1798,7 @@ function undo() {
   let s = g.snaps.pop();
   if (g.mode !== 'pvp') while (s.b.toMove !== g.human && g.snaps.length) s = g.snaps.pop();
   g.b = s.b; g.history.length = s.history; g.moves.length = s.moves; g.humanMoves = s.humanMoves; g.lastInfo = s.lastInfo; g.over = false; g.result = null;
+  g.hopeless = false;
   V.setOwnership(null); V.sync(colorsOf(g.b), g.b.last); refresh(); nextTurn();
 }
 function switchBoard(T, N) {
@@ -1722,7 +1831,11 @@ function finish(resigned = 0) {
   const g = G(); stopEverything();
   const sc = scoreNow(g), K = KOMI[g.N];
   let winner, text, scoreLine;
-  if (resigned) { winner = 3 - resigned; text = both(() => L(`${cname(winner)}の中押し勝ち`, `${cname(winner)} wins by resignation`)); scoreLine = () => L(`${cname(resigned)}が投了しました`, `${cname(resigned)} resigned`); }
+  if (resigned) {
+    winner = 3 - resigned; text = both(() => L(`${cname(winner)}の中押し勝ち`, `${cname(winner)} wins by resignation`));
+    const cpuGaveUp = (g.mode === 'normal' || g.mode === 'good' || g.mode === 'max') && resigned !== g.human, mode = g.mode;
+    scoreLine = cpuGaveUp ? () => L(`CPU（${LEVEL_NAME[mode]}）が投了しました`, `CPU (${LEVEL_EN[mode]}) resigned`) : () => L(`${cname(resigned)}が投了しました`, `${cname(resigned)} resigned`);
+  }
   else {
     winner = sc.adj > 0 ? BLACK : sc.adj < 0 ? WHITE : 0;
     const diff = Math.abs(sc.adj);
