@@ -84,6 +84,7 @@ button,input{font:inherit;color:inherit}
 .tool:hover{border-color:var(--ink)}
 .tool:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .tool svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tool.lang-tool{width:auto;padding:0 11px;font-size:12.5px;font-weight:700}
 .tool .off{display:none}
 .tool[aria-pressed="false"] .on{display:none}
 .tool[aria-pressed="false"] .off{display:inline}
@@ -94,6 +95,7 @@ button,input{font:inherit;color:inherit}
   box-shadow:0 6px 18px var(--shadow);z-index:3}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast.ring{background:var(--accent);color:var(--on-accent)}
+html[lang="en"] .toast{white-space:normal;width:max-content;text-align:center;line-height:1.4;border-radius:18px}
 @container stage (max-width: 760px){ .toast{top:92px;max-width:calc(100% - 32px)} }
 
 .viewpad{position:absolute;left:14px;bottom:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -154,6 +156,10 @@ button,input{font:inherit;color:inherit}
 .bar .bb{background:var(--stone-b);border-radius:99px 0 0 99px}
 .bar .bw{background:var(--stone-w-hi);margin-left:auto;border-radius:0 99px 99px 0}
 .bar i{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--accent);border-radius:2px}
+.kline{grid-column:1/-1;justify-self:end;margin-top:-4px;font-family:var(--f-mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.komi-note{margin:10px 0 0;padding:9px 12px;border-radius:12px;background:var(--accent-soft);font-size:12.5px;line-height:1.6;color:var(--ink)}
+.komi-note b{font-family:var(--f-display);font-weight:400;font-size:15px;color:var(--ink);margin-right:8px;white-space:nowrap}
+.kpill{display:inline-block;padding:0 6px;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:700;line-height:1.5;margin-right:3px}
 .bar-legend{display:flex;justify-content:space-between;margin-top:5px;font-family:var(--f-mono);font-size:11px;color:var(--muted)}
 .status{margin:8px 0 0;font-size:14.5px}
 .status small{display:block;color:var(--muted);font-size:12.5px;font-family:var(--f-mono)}
@@ -266,13 +272,14 @@ button,input{font:inherit;color:inherit}
 <header class="sitebar">
   <a class="home" href="https://yataramath.github.io/" target="_top">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
-    <span>やたら楽しい数学 <small>ゲーム一覧</small></span>
+    <span data-en-html="Yatara Game Room <small>all games</small>">やたら楽しいゲーム部屋 <small>ゲーム一覧</small></span>
   </a>
   <div class="bar-tools">
-    <button type="button" class="tool" id="soundBtn" aria-pressed="true" aria-label="効果音" title="効果音">
+    <button type="button" class="tool lang-tool" id="langBtn" data-i18n-skip>EN</button>
+    <button type="button" class="tool" id="soundBtn" aria-pressed="true" aria-label="効果音" title="効果音" data-en-attr="aria-label:Sound effects">
       <svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path class="on" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="off" d="M17 9l5 6M22 9l-5 6"/></svg>
     </button>
-    <button type="button" class="tool" id="fsBtn" aria-label="全画面" title="全画面">
+    <button type="button" class="tool" id="fsBtn" aria-label="全画面" title="全画面" data-en-attr="aria-label:Full screen;title:Full screen">
       <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
     </button>
   </div>
@@ -280,27 +287,27 @@ button,input{font:inherit;color:inherit}
 
 <div class="app" id="app">
   <main class="stage" id="stage">
-    <canvas id="gl" role="img" aria-label="トーラス盤の3D表示。ドラッグで向きを変えられます。"></canvas>
+    <canvas id="gl" role="img" aria-label="トーラス盤の3D表示。ドラッグで向きを変えられます。" data-en-attr="aria-label:3D view of the torus board. Drag to turn it."></canvas>
     <header class="brand">
-      <h1>トーラス<span>オセロ</span></h1>
+      <h1 data-en-html="Torus <span>Othello</span>">トーラス<span>オセロ</span></h1>
       <p id="brandDims">8 × 6 = 48マス</p>
     </header>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <div class="viewpad" role="group" aria-label="視点の操作">
-      <div class="vp" title="表面を小さい輪の向きに送ります。内側のマスを手前に出せます。">
-        <span>転がす</span>
-        <button type="button" id="rollUp" aria-label="表面を上へ転がす"><svg viewBox="0 0 16 16"><path d="M3.5 10.5 8 6l4.5 4.5"/></svg></button>
-        <button type="button" id="rollDown" aria-label="表面を下へ転がす"><svg viewBox="0 0 16 16"><path d="M3.5 5.5 8 10l4.5-4.5"/></svg></button>
+    <div class="viewpad" role="group" aria-label="視点の操作" data-en-attr="aria-label:View controls">
+      <div class="vp" title="表面を小さい輪の向きに送ります。内側のマスを手前に出せます。" data-en-attr="title:Rolls the surface along the small ring, bringing the inner cells to the front.">
+        <span data-en="Roll">転がす</span>
+        <button type="button" id="rollUp" aria-label="表面を上へ転がす" data-en-attr="aria-label:Roll the surface up"><svg viewBox="0 0 16 16"><path d="M3.5 10.5 8 6l4.5 4.5"/></svg></button>
+        <button type="button" id="rollDown" aria-label="表面を下へ転がす" data-en-attr="aria-label:Roll the surface down"><svg viewBox="0 0 16 16"><path d="M3.5 5.5 8 10l4.5-4.5"/></svg></button>
       </div>
-      <div class="vp" title="大きい輪の向きにドーナツを回します。">
-        <span>回す</span>
-        <button type="button" id="spinL" aria-label="ドーナツを左へ回す"><svg viewBox="0 0 16 16"><path d="M10.5 3.5 6 8l4.5 4.5"/></svg></button>
-        <button type="button" id="spinR" aria-label="ドーナツを右へ回す"><svg viewBox="0 0 16 16"><path d="M5.5 3.5 10 8l-4.5 4.5"/></svg></button>
+      <div class="vp" title="大きい輪の向きにドーナツを回します。" data-en-attr="title:Turns the donut along the big ring.">
+        <span data-en="Turn">回す</span>
+        <button type="button" id="spinL" aria-label="ドーナツを左へ回す" data-en-attr="aria-label:Turn the donut left"><svg viewBox="0 0 16 16"><path d="M10.5 3.5 6 8l4.5 4.5"/></svg></button>
+        <button type="button" id="spinR" aria-label="ドーナツを右へ回す" data-en-attr="aria-label:Turn the donut right"><svg viewBox="0 0 16 16"><path d="M5.5 3.5 10 8l-4.5 4.5"/></svg></button>
       </div>
-      <button type="button" class="vp-reset" id="resetView">視点を戻す</button>
-      <button type="button" class="vp-reset" id="showSpiral" hidden>らせんを見る</button>
+      <button type="button" class="vp-reset" id="resetView" data-en="Reset view">視点を戻す</button>
+      <button type="button" class="vp-reset" id="showSpiral" hidden data-en="Show the spiral">らせんを見る</button>
     </div>
-    <p class="gesture">ドラッグで向きを変える ・ ホイール / ピンチで拡大<br>キー：W S で転がす　A D で回す</p>
+    <p class="gesture" data-en-html="Drag to turn · wheel / pinch to zoom<br>Keys: W S roll · A D turn">ドラッグで向きを変える ・ ホイール / ピンチで拡大<br>キー：W S で転がす　A D で回す</p>
 
     <div class="result" id="result" hidden>
       <div class="result-card" role="dialog" aria-modal="false" aria-labelledby="resTitle">
@@ -309,117 +316,119 @@ button,input{font:inherit;color:inherit}
         <p class="res-score" id="resScore"></p>
         <p class="res-sub" id="resSub"></p>
         <form class="name-form" id="nameForm" hidden>
-          <label for="nameInput">名前を残す（16文字まで）</label>
+          <label for="nameInput" data-en="Leave your name (up to 16 characters)">名前を残す（16文字まで）</label>
           <div class="name-row">
-            <input id="nameInput" name="name" maxlength="16" autocomplete="nickname" placeholder="ニックネーム">
-            <button type="submit" class="btn accent" id="nameGo">登録</button>
+            <input id="nameInput" name="name" maxlength="16" autocomplete="nickname" placeholder="ニックネーム" data-en-attr="placeholder:Nickname">
+            <button type="submit" class="btn accent" id="nameGo" data-en="Save">登録</button>
           </div>
           <p class="name-msg" id="nameMsg" aria-live="polite"></p>
         </form>
         <div class="res-actions">
-          <button type="button" class="btn ghost-btn" id="resView">盤を見る</button>
-          <button type="button" class="btn solid" id="resAgain">もう一局</button>
+          <button type="button" class="btn ghost-btn" id="resView" data-en="View board">盤を見る</button>
+          <button type="button" class="btn solid" id="resAgain" data-en="Play again">もう一局</button>
         </div>
       </div>
     </div>
   </main>
 
   <aside class="side">
-    <div class="variant" role="tablist" aria-label="盤の種類">
-      <button type="button" role="tab" id="tabTorus" aria-selected="true" data-t="0">トーラス</button>
-      <button type="button" role="tab" id="tabTwist" aria-selected="false" data-t="1">ねじれトーラス</button>
+    <div class="variant" role="tablist" aria-label="盤の種類" data-en-attr="aria-label:Board type">
+      <button type="button" role="tab" id="tabTorus" aria-selected="true" data-t="0" data-en="Torus">トーラス</button>
+      <button type="button" role="tab" id="tabTwist" aria-selected="false" data-t="1" data-en="Twisted torus">ねじれトーラス</button>
     </div>
     <p class="variant-note" id="variantNote"></p>
 
-    <section aria-label="スコア">
+    <section aria-label="スコア" data-en-attr="aria-label:Score">
       <div class="players">
         <div class="player" id="pB">
           <span class="disc b" aria-hidden="true"></span>
-          <div style="min-width:0"><div class="pname">黒</div><div class="prole" id="roleB">先手</div></div>
+          <div style="min-width:0"><div class="pname" data-en="Black">黒</div><div class="prole" id="roleB">先手</div></div>
           <div class="count" id="cB">2</div>
+          <div class="kline" id="kB"></div>
         </div>
         <div class="player" id="pW">
           <span class="disc w" aria-hidden="true"></span>
-          <div style="min-width:0"><div class="pname">白</div><div class="prole" id="roleW">後手</div></div>
+          <div style="min-width:0"><div class="pname" data-en="White">白</div><div class="prole" id="roleW">後手</div></div>
           <div class="count" id="cW">2</div>
         </div>
       </div>
       <div class="bar" aria-hidden="true"><span class="bb" id="barB"></span><span class="bw" id="barW"></span><i id="barMark"></i></div>
       <div class="bar-legend" aria-hidden="true"><span id="legB"></span><span id="legW"></span></div>
+      <p class="komi-note" id="komiNote"></p>
       <p class="status" id="status" aria-live="polite">黒の番</p>
-      <button type="button" class="btn accent pending-champ" id="pendingChamp" hidden>最強に勝ちました。名前を登録する</button>
+      <button type="button" class="btn accent pending-champ" id="pendingChamp" hidden data-en="You beat the Strongest! Add your name">最強に勝ちました。名前を登録する</button>
     </section>
 
-    <section class="settings" aria-label="設定">
+    <section class="settings" aria-label="設定" data-en-attr="aria-label:Settings">
       <div class="row">
-        <span class="lbl" id="lblMode">対戦相手</span>
+        <span class="lbl" id="lblMode" data-en="Opponent">対戦相手</span>
         <div class="seg" role="radiogroup" aria-labelledby="lblMode">
-          <input type="radio" name="mode" id="modePvp" value="pvp" checked><label for="modePvp">ふたりで</label>
-          <input type="radio" name="mode" id="modeNormal" value="normal"><label for="modeNormal">普通</label>
-          <input type="radio" name="mode" id="modeStrong" value="strong"><label for="modeStrong">強い</label>
-          <input type="radio" name="mode" id="modeMax" value="max"><label for="modeMax">最強</label>
-          <input type="radio" name="mode" id="modeOnline" value="online"><label for="modeOnline">オンライン</label>
+          <input type="radio" name="mode" id="modePvp" value="pvp" checked><label for="modePvp" data-en="2 players">ふたりで</label>
+          <input type="radio" name="mode" id="modeNormal" value="normal"><label for="modeNormal" data-en="Normal">普通</label>
+          <input type="radio" name="mode" id="modeStrong" value="strong"><label for="modeStrong" data-en="Strong">強い</label>
+          <input type="radio" name="mode" id="modeMax" value="max"><label for="modeMax" data-en="Strongest">最強</label>
+          <input type="radio" name="mode" id="modeOnline" value="online"><label for="modeOnline" data-en="Online">オンライン</label>
         </div>
       </div>
       <p class="note" id="modeNote"></p>
       <div class="row" id="colorRow">
-        <span class="lbl" id="lblColor">あなたの色</span>
+        <span class="lbl" id="lblColor" data-en="Your color">あなたの色</span>
         <div class="seg" role="radiogroup" aria-labelledby="lblColor">
-          <input type="radio" name="human" id="humanB" value="b" checked><label for="humanB">黒（先手）</label>
-          <input type="radio" name="human" id="humanW" value="w"><label for="humanW">白（後手）</label>
+          <input type="radio" name="human" id="humanB" value="b" checked><label for="humanB" data-en="Black (first)">黒（先手）</label>
+          <input type="radio" name="human" id="humanW" value="w"><label for="humanW" data-en="White (second)">白（後手）</label>
         </div>
       </div>
       <div class="online" id="onlineBox" hidden>
-        <div class="field"><label for="roomName">部屋の名前（合言葉）</label><input id="roomName" maxlength="24" placeholder="例：やたら123" autocomplete="off"></div>
-        <div class="field"><label for="nickName">あなたの名前</label><input id="nickName" maxlength="16" placeholder="ニックネーム" autocomplete="nickname"></div>
+        <div class="field"><label for="roomName" data-en="Room name (shared password)">部屋の名前（合言葉）</label><input id="roomName" maxlength="24" placeholder="例：やたら123" autocomplete="off" data-en-attr="placeholder:e.g. yatara123"></div>
+        <div class="field"><label for="nickName" data-en="Your name">あなたの名前</label><input id="nickName" maxlength="16" placeholder="ニックネーム" autocomplete="nickname" data-en-attr="placeholder:Nickname"></div>
         <div class="row-btns">
-          <button type="button" class="btn accent" id="joinBtn">部屋に入る</button>
-          <button type="button" class="btn ghost-btn" id="leaveBtn" disabled>出る</button>
+          <button type="button" class="btn accent" id="joinBtn" data-en="Join room">部屋に入る</button>
+          <button type="button" class="btn ghost-btn" id="leaveBtn" disabled data-en="Leave">出る</button>
         </div>
         <p class="online-status" id="onlineStatus">同じ部屋の名前を入れた2人で対戦できます。先に入った人が黒です。盤（トーラス・ねじれ）も先に入った人に合わせます。</p>
       </div>
       <div class="row">
-        <span class="lbl" id="lblHint">置けるマス</span>
+        <span class="lbl" id="lblHint" data-en="Legal moves">置けるマス</span>
         <div class="seg" role="radiogroup" aria-labelledby="lblHint">
-          <input type="radio" name="hint" id="hintOn" value="on" checked><label for="hintOn">表示</label>
-          <input type="radio" name="hint" id="hintOff" value="off"><label for="hintOff">かくす</label>
+          <input type="radio" name="hint" id="hintOn" value="on" checked><label for="hintOn" data-en="Show">表示</label>
+          <input type="radio" name="hint" id="hintOff" value="off"><label for="hintOff" data-en="Hide">かくす</label>
         </div>
       </div>
-      <p class="note pend" id="pendNote" hidden>設定は次の対局から変わります。「新しいゲーム」を押すと始まります。</p>
+      <p class="note pend" id="pendNote" hidden data-en="Settings change from the next game. Press “New game” to start it.">設定は次の対局から変わります。「新しいゲーム」を押すと始まります。</p>
       <div class="actions">
-        <button type="button" class="btn ghost-btn" id="undo">待った</button>
-        <button type="button" class="btn solid" id="newGame">新しいゲーム</button>
+        <button type="button" class="btn ghost-btn" id="undo" data-en="Undo">待った</button>
+        <button type="button" class="btn solid" id="newGame" data-en="New game">新しいゲーム</button>
       </div>
     </section>
 
     <section aria-labelledby="netTitle">
       <div class="net-box">
-        <div class="net" id="net" role="grid" aria-label="盤面の展開図。矢印キーで移動、Enterで置く"></div>
+        <div class="net" id="net" role="grid" aria-label="盤面の展開図。矢印キーで移動、Enterで置く" data-en-attr="aria-label:Flat map of the board. Arrow keys move, Enter plays"></div>
         <div class="net-text">
-          <b id="netTitle">展開図</b>
+          <b id="netTitle" data-en="Flat map">展開図</b>
           <span id="netNote"></span>
-          <span>ここをクリックしても置けます。</span>
+          <span data-en="You can also click here to play.">ここをクリックしても置けます。</span>
         </div>
       </div>
     </section>
 
     <details class="rules" id="rules">
-      <summary>ルール</summary>
+      <summary data-en="Rules">ルール</summary>
       <ul id="rulesList"></ul>
     </details>
-    <a class="hall-link" href="#hall">最強に勝った人を見る ↓</a>
+    <a class="hall-link" href="#hall" data-en="Who beat the Strongest ↓">最強に勝った人を見る ↓</a>
   </aside>
 </div>
 
 <section class="hall" id="hall" aria-labelledby="hallTitle">
   <div class="hall-head">
     <div>
-      <h2 id="hallTitle">最強に勝った人</h2>
+      <h2 id="hallTitle" data-en="Beat the Strongest">最強に勝った人</h2>
       <p id="hallSub">最強に勝つと、ここに名前が残ります。</p>
     </div>
-    <div class="hall-tabs" role="tablist" aria-label="どちらの盤の一覧を見るか">
-      <button type="button" role="tab" data-t="0" aria-selected="true">トーラス<i id="hallCount0"></i></button>
-      <button type="button" role="tab" data-t="1" aria-selected="false">ねじれトーラス<i id="hallCount1"></i></button>
+    <div class="hall-tabs" role="tablist" aria-label="どちらの盤の一覧を見るか" data-en-attr="aria-label:Which board to show">
+      <button type="button" role="tab" data-t="0" aria-selected="true"><span data-en="Torus">トーラス</span><i id="hallCount0"></i></button>
+      <button type="button" role="tab" data-t="1" aria-selected="false"><span data-en="Twisted torus">ねじれトーラス</span><i id="hallCount1"></i></button>
     </div>
   </div>
   <div class="hall-stats" id="hallStats"></div>
@@ -914,24 +923,75 @@ function createEngine(T, opts) {
 }
 
 
+/* ================= language ================= */
+// 言語：?lang=en / ?lang=ja ＞ この端末で前に選んだ言語（全ゲーム共通）＞ ブラウザの言語
+const LANG_KEY = 'yatara:lang';
+let LANG = (() => {
+  try { const q = new URLSearchParams(location.search).get('lang'); if (q === 'en' || q === 'ja') { try { localStorage.setItem(LANG_KEY, q); } catch (e) {} return q; } } catch (e) {}
+  try { const s = (localStorage.getItem(LANG_KEY) || '').replace(/"/g, ''); if (s === 'en' || s === 'ja') return s; } catch (e) {}
+  return /^ja\b/i.test(navigator.language || '') ? 'ja' : 'en';
+})();
+const L = (ja, en) => (LANG === 'en' ? en : ja);
+const escHtml = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+function applyStaticLang() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-en],[data-en-html]').forEach(el => {
+    if (el.dataset.ja == null) el.dataset.ja = el.innerHTML;          // remember the Japanese once
+    el.innerHTML = LANG === 'en' ? (el.dataset.enHtml != null ? el.dataset.enHtml : escHtml(el.dataset.en)) : el.dataset.ja;
+  });
+  document.querySelectorAll('[data-en-attr]').forEach(el => {
+    for (const pair of el.dataset.enAttr.split(';')) {
+      const at = pair.indexOf(':'); if (at < 0) continue;
+      const name = pair.slice(0, at).trim(), en = pair.slice(at + 1).trim(), keep = 'ja-' + name;
+      if (el.getAttribute('data-' + keep) == null) el.setAttribute('data-' + keep, el.getAttribute(name) || '');
+      el.setAttribute(name, LANG === 'en' ? en : el.getAttribute('data-' + keep));
+    }
+  });
+  document.title = L('トーラスオセロ', 'Torus Othello');
+  const lb = document.getElementById('langBtn');
+  if (lb) {
+    lb.textContent = LANG === 'en' ? '日本語' : 'EN';
+    lb.lang = LANG === 'en' ? 'ja' : 'en';
+    const t = LANG === 'en' ? '日本語に切り替え' : 'Switch to English';
+    lb.setAttribute('aria-label', t); lb.title = t;
+  }
+}
+// the record keeper answers in Japanese
+function srvErr(s) {
+  if (LANG !== 'en') return s;
+  s = String(s || '');
+  if (/満員/.test(s)) return 'This room is full. Please choose another room name.';
+  if (/勝った対局が見つかりません/.test(s)) return "Couldn't find your winning game.";   // before the room check (both say 見つかりません)
+  if (/見つかりません/.test(s)) return 'Room not found (rooms disappear after 6 hours of no activity).';
+  if (/対局者ではありません/.test(s)) return 'You are not a player in this room.';
+  if (/まだ対局が始まっていません/.test(s)) return "The game hasn't started yet.";
+  if (/部屋の名前/.test(s)) return 'Please enter a room name.';
+  if (/名前を入力/.test(s)) return 'Please enter a name.';
+  if (/もう名前を登録/.test(s)) return 'A name is already registered for this game.';
+  if (/棋譜を確かめられません/.test(s)) return "Couldn't verify the game record.";
+  return 'Something went wrong. Please try again.';
+}
+applyStaticLang();
+
 /* ================= constants ================= */
 const RECORD_URL = "" || (window.YATARA && window.YATARA.recordUrl) || '';     // まとめ記録係のURL（空なら記録はこの端末だけ）
 const GAME_ID = 'torus-othello';
 const BOOK = {"--------------------------------------xo------ox":40,"-------------------------------------ooo-----xxx":30,"--------------------------------o-----xox-----ox":31,"------------------------------o-------oxx-----ox":45,"---------------------o--------o------oxo-----xxx":22,"-----------------------o------o------oxo-----xxx":22,"------------------------o-----xoo-----oxo------x":46,"----------------------o-------oox-----oxo------x":0,"------------------------------ooo-----oxx-----ox":37,"---------------------o--------oxx----xxo-------o":29,"-----------------------o-------oxx----xox------o":46,"-------------------------o-------oxx----oxx----o":17,"-----------------------------o-------oox----xxxo":36,"------------------------------o-------oooo---xxx":29,"---------------------ooo------o------oxo-----xxx":14,"---------------o-----xoo-----oxo------x-------xo":37,"-------------o-------oox-----oxo------x-------xo":39,"----------------o-----xoo-----oxo------x------ox":38,"--------------o-------oox-----oxo------x------ox":40,"----------------o-------ox-----oox-----oox-----o":15,"-----------------o------ox-----oxx-----oox-----o":16,"------------------o-----xo-----oox-----oox-----o":17,"------------------------o-----xoo-----oxo----oxx":37,"------------------------o-----xoo----oooo-----xx":0,"------------------------o----oooo-----xxo-----xx":22,"------------o--------ox------xoo-----xoo-------o":13,"-------------o-------oox-----oxx------ox-------o":46,"--------------o-------oox-----oox------ox------o":46,"--------------------o-------oox-----oxo------xxo":39,"---------------------o-------oox-----oooo-----xx":45,"---------------------o-------oooo----oxx------xx":23,"----------------------------o-ooo----oxxx-----ox":23,"------------------------------ooo----oxxx---o-ox":23,"------------------------------ooo----xoxx----oox":29,"-----------------------------ooo-----ooxx----ooo":23,"----------------------------o-xo-----oxxx----ooo":7,"----------------------o-------oo-----xoxx----ooo":23,"--------------------o-------oox----xxxo-------oo":27,"---------------------o-------oxx----xoxx-----o-o":44,"---------------------o-------oxx----oxxx---o---o":35,"---------------------o-------oooo---xxxx-------o":23,"---------------------o-------oxxx----oxo-----o-o":40,"---------------------o-------oxx----xxo-----xo-o":39,"-----------------------o-------oxx----oxx----ooo":22,"-----------------------o-------oox----xxxo----xo":30,"-----------------------o-------oooo---xxx-----xo":0,"-----------------------o-----o-oxx----oxx-----xo":37,"-----------------------o--o----oxo----xxo-----xo":41,"-----------------o---oooo----xxx-------x-------x":13,"-----------------o----xxo----xxo------ox-------x":46,"-----------------------o------xoxx----xoxo-----o":24,"-----------------------------o------oxxx---ooooo":6,"-----------------------------o-o----xxxo----xxxo":21,"---------------------o-------oxx---ooox-------ox":6,"----------------------o------oox---oooo-------ox":45,"-----------------------o-----xox---ooox-------ox":22,"-----------------------------xo------ooooo---xxx":22,"----------------------------ooo-------xooo---xxx":33,"-------------------------------o------oo------xo":0,"--------------------------------------ooo-----xo":30,"-------------------------o------oo------oxx----o":24,"------------------------o------oo------oxx-----o":16,"-----------------------o------oo------xox------o":22,"----------------------o-------xox------oo------o":0,"---------------------o--------oxx------oo------o":0,"---------------------o--------o-------xoo-----xo":0,"-----------------------------ox-------ooo-----xo":0,"------------------------------ox-----oooo------x":29,"------------------------------ooo----oox-------x":36,"------------------------o-----oo-----oox-------x":29,"----------------o-------oo------ox------oxx----o":17,"-----------------------o----xxo------xo------ooo":5,"------------------------o----xxo------oo-----oox":32,"------------------------o----xxo-----ooo------ox":45,"------------------------o---oooo------xo------ox":23,"----------------------o-o----xoo------oo------ox":23,"---------------------o--o----xoo------xo------ox":40,"----------------o-----xxo------xo------o------ox":17,"----------------o-----xxo------oo-----ox-------x":40,"----------------o-----xoo-----ooo------x-------x":38,"----------------o----oooo------xo------x-------x":33,"--------------o-o-----xoo------xo------x-------x":6,"---------------------o------xox------xo------ooo":39,"----------------------o------xoo------xxo-----ox":21,"----------------------o------oox----o-xx------ox":21,"----------------------o------xooo-----xo------ox":40,"----------------------o-----ooox------xx------ox":6,"--------------------o-------xox------xo------ooo":39,"---------------------o-------oox-----oxx------ox":6,"---------------------o-------xooo-----xo------ox":23,"---------------------o------ooox------xx------ox":6,"-----------o--------oo------xo------xxo--------o":30,"-------------------o--------oxx------ox------ooo":36,"--------------------o--------oxx------ooo-----ox":0,"--------------------o--------oooo-----oo------ox":45,"--------------------o---o----oxo------ox------ox":37,"--------------------o-o------oox------ox------ox":21,"--------------------o--------o------oooo-----xxx":28,"---------------o--------o-------xoo-----oxx----o":35,"--------------o--------o-------ooo-----oox-----o":25,"-------------o--------o-------xoo-----xox------o":0,"------------o--------o-------xoo-----xxo-------o":23,"-----------o--------o-------xoo-----xxo--------o":21,"---------------------o------oo-------oxo-----xxx":40,"----------------------------ooo------oxo-----xxx":36,"----------------------o-----xoo-----oxo-------xo":31,"--------------------o-------oox-----oxo-------xo":21,"---------------------o-------o------ooxo-----xxx":20,"----------------------o------o------ooxo-----xxx":27,"-----------------------o-----xoo-----oxoo------x":22,"----------------------o------xxo-----oxoo------x":45,"---------------------o-------oox-----oxoo------x":28,"----------------------o-------o-------oxxx---ooo":7,"-----------------------------ooo---xxxo-------xo":22,"------------------------------ooo---xxoo------ox":45,"------------------------------ooo---xxox-----o-x":29,"------------------------------ooo---xoxx----o--x":23,"----------------o-------o-------oxo-----oox----o":31,"-----------------------o----xoo-----oxo-------xo":21,"------------------------o----xoo-----oox------ox":5,"------------------------o----xoo-----oox-----o-x":32,"------------------------o----xoo-----oooo------x":32,"------------------------o---oooo-----oxx-------x":21,"---------------------o--o----ooo-----oxx-------x":22};
 const KOMI = {"0": 15, "1": 15};
 const VKEY = { 0: 'torus', 1: 'twist' };
-const VNAME = { 0: 'トーラス', 1: 'ねじれトーラス' };
+const vname = T => T === 1 ? L('ねじれトーラス', 'Twisted torus') : L('トーラス', 'Torus');
 const NU = 8, NV = 6, N = 48, BLACK = 1, WHITE = -1, ROWS = 'abcdef';
 const RULES = { 0: createEngine(0, { komi: KOMI[0] }), 1: createEngine(1, { komi: KOMI[1] }) };
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const SP = RM ? 0.3 : 1;
 const T_DROP = 280 * SP, T_START = 210 * SP, T_STEP = 70 * SP, T_FLIP = 430 * SP;
-const LEVEL_NAME = { normal: '普通', strong: '強い', max: '最強' };
+const levelName = m => ({ normal: L('普通', 'Normal'), strong: L('強い', 'Strong'), max: L('最強', 'Strongest') })[m];
 
 const mod = (a, n) => ((a % n) + n) % n;
 const iOf = k => k % NU, jOf = k => (k / NU) | 0, kOf = (i, j) => j * NU + i;
 const label = k => `${iOf(k) + 1}${ROWS[NV - 1 - jOf(k)]}`;
-const cname = c => c === BLACK ? '黒' : '白';
+const cname = c => c === BLACK ? L('黒', 'Black') : L('白', 'White');
 const $ = id => document.getElementById(id);
 
 const store = {
@@ -1435,7 +1495,8 @@ function initView() {
 
 const V = initView() || (() => {
   const p = document.createElement('p'); p.className = 'nogl';
-  p.textContent = 'この環境では3D表示が使えません。右の展開図をクリックして遊べます。';
+  const ja = 'この環境では3D表示が使えません。右の展開図をクリックして遊べます。', en = "3D view isn't available here. Click the flat map to play.";
+  p.dataset.ja = ja; p.dataset.en = en; p.textContent = L(ja, en);   // applyStaticLang switches it later
   stage.append(p);
   const noop = () => {};
   return { onTap: null, onHover: null, setVariant: noop, sync: noop, place: noop, flip: noop, glow: noop, setLast: noop, setPreview: noop, setHints: noop, setHover: noop, clearAnims: noop, roll: noop, spin: noop, resetView: noop };
@@ -1527,24 +1588,32 @@ function renderNet() {
     c.classList.toggle('last', k === g.last);
     c.classList.toggle('hover', k === UI.hover);
     c.classList.toggle('pv', pv.has(k));
-    c.setAttribute('aria-label', `${label(k)} ${v === BLACK ? '黒' : v === WHITE ? '白' : UI.legalSet.has(k) ? '空き・置ける' : '空き'}`);
+    c.setAttribute('aria-label', `${label(k)} ${v === BLACK ? L('黒', 'Black') : v === WHITE ? L('白', 'White') : UI.legalSet.has(k) ? L('空き・置ける', 'empty, legal move') : L('空き', 'empty')}`);
   }
   for (const gh of ghosts) { const v = g.board[gh.k]; gh.el.dataset.s = v === BLACK ? 'b' : v === WHITE ? 'w' : ''; }
 }
 function roleText(g, color) {
-  if (g.mode === 'pvp' || (g.mode === 'online' && !g.online)) return color === BLACK ? '先手' : '後手';
-  if (g.mode === 'online') { const pl = g.online.players.find(x => seatColor(x.seat) === color); return (color === seatColor(g.online.seat) ? 'あなた・' : '') + (pl ? pl.nick : '待っています'); }
-  return color === g.human ? 'あなた' : `${LEVEL_NAME[g.mode]}CPU`;
+  if (g.mode === 'pvp' || (g.mode === 'online' && !g.online)) return color === BLACK ? L('先手', '1st player') : L('後手', '2nd player');
+  if (g.mode === 'online') { const pl = g.online.players.find(x => seatColor(x.seat) === color); return (color === seatColor(g.online.seat) ? L('あなた・', 'You · ') : '') + (pl ? pl.nick : L('待っています', 'Waiting…')); }
+  return color === g.human ? L('あなた', 'You') : L(`${levelName(g.mode)}CPU`, `${levelName(g.mode)} CPU`);
+}
+// the last-move line is kept as data so it can be shown in either language
+function lastText(li) {
+  if (!li || typeof li !== 'object') return li || '';
+  return L(`直前：${cname(li.c)} ${label(li.k)}（${li.n}枚返し）`, `Last: ${cname(li.c)} ${label(li.k)} (${li.n} flipped)`);
 }
 function renderScore() {
   const g = G(), sc = score(cur, g.board), K = KOMI[cur];
-  $('cB').innerHTML = `${sc.b}<small>+${K}</small>`;
+  $('cB').textContent = sc.b;
+  $('kB').innerHTML = L(`<span class="kpill">コミ+${K}</span> 合計 ${sc.b + K}`, `<span class="kpill">komi +${K}</span> total ${sc.b + K}`);
+  $('komiNote').innerHTML = L(`<b>コミ ${K}</b>白（後手）がとても有利なので、最後に黒の石の数に${K}を足して比べます。`,
+    `<b>komi ${K}</b>White (second) has a big edge on this board, so Black gets ${K} added to its disc count at the end.`);
   $('cW').textContent = sc.w;
   $('barB').style.width = (sc.b / N * 100) + '%'; $('barW').style.width = (sc.w / N * 100) + '%';
   // black wins once black + komi passes white; on a full board that is at (48 − komi) / 2 stones
   $('barMark').style.left = `calc(${((N - K) / 2) / N * 100}% - 1px)`;
-  $('legB').textContent = `黒は${Math.floor((N - K) / 2) + 1}個以上で勝ち`;
-  $('legW').textContent = `白は${Math.ceil((N + K) / 2)}個以上で勝ち`;
+  $('legB').textContent = L(`黒は${Math.floor((N - K) / 2) + 1}個以上で勝ち`, `Black wins with ${Math.floor((N - K) / 2) + 1}+`);
+  $('legW').textContent = L(`白は${Math.ceil((N + K) / 2)}個以上で勝ち`, `White wins with ${Math.ceil((N + K) / 2)}+`);
   $('pB').classList.toggle('turn', !g.over && g.turn === BLACK);
   $('pW').classList.toggle('turn', !g.over && g.turn === WHITE);
   $('roleB').textContent = roleText(g, BLACK);
@@ -1552,15 +1621,15 @@ function renderScore() {
   const st = $('status');
   let main;
   if (g.over) {
-    main = sc.winner === 0 ? '<strong>引き分け</strong>' : `<strong>${cname(sc.winner)}の勝ち</strong>`;
-    main += `（黒 ${sc.b}+${K} ＝ ${sc.b + K} 対 白 ${sc.w}）`;
-  } else if (UI.thinking) main = `<strong class="dots">CPU（${LEVEL_NAME[g.mode]}）が考えています</strong>`;
-  else if (netWaiting(g)) main = g.online.status === 'waiting' ? '<strong class="dots">相手が部屋に入るのを待っています</strong>' : '<strong>対局は終わりました</strong>';
-  else if (isRemoteTurn(g)) main = oppAway(g) ? '<strong>相手が部屋を出ています</strong>' : `<strong class="dots">相手の手を待っています</strong>`;
-  else main = `<strong>${cname(g.turn)}の番</strong> ・ 置けるマス ${UI.legal.length}か所`;
-  st.innerHTML = main + (g.lastInfo ? `<small>${g.lastInfo}</small>` : '');
+    main = sc.winner === 0 ? `<strong>${L('引き分け', 'Draw')}</strong>` : `<strong>${L(`${cname(sc.winner)}の勝ち`, `${cname(sc.winner)} wins`)}</strong>`;
+    main += L(`（黒 ${sc.b}+${K} ＝ ${sc.b + K} 対 白 ${sc.w}）`, ` (Black ${sc.b}+${K} = ${sc.b + K} vs White ${sc.w})`);
+  } else if (UI.thinking) main = `<strong class="dots">${L(`CPU（${levelName(g.mode)}）が考えています`, `CPU (${levelName(g.mode)}) is thinking`)}</strong>`;
+  else if (netWaiting(g)) main = g.online.status === 'waiting' ? `<strong class="dots">${L('相手が部屋に入るのを待っています', 'Waiting for your opponent to join')}</strong>` : `<strong>${L('対局は終わりました', 'The game is over')}</strong>`;
+  else if (isRemoteTurn(g)) main = oppAway(g) ? `<strong>${L('相手が部屋を出ています', 'Your opponent has left the room')}</strong>` : `<strong class="dots">${L('相手の手を待っています', "Waiting for your opponent's move")}</strong>`;
+  else main = L(`<strong>${cname(g.turn)}の番</strong> ・ 置けるマス ${UI.legal.length}か所`, `<strong>${cname(g.turn)} to move</strong> · ${plural(UI.legal.length, 'legal move', 'legal moves')}`);
+  st.innerHTML = main + (g.lastInfo ? `<small>${lastText(g.lastInfo)}</small>` : '');
   $('undo').disabled = !g.history.length || g.mode === 'max' || g.mode === 'online' || UI.thinking;
-  $('undo').title = g.mode === 'max' ? '最強戦は待ったなしです' : '';
+  $('undo').title = g.mode === 'max' ? L('最強戦は待ったなしです', 'No undo against the Strongest') : '';
   $('pendingChamp').hidden = !(g.champ && !g.champ.done && $('result').hidden);
 }
 function renderSettings() {
@@ -1574,34 +1643,51 @@ function renderSettings() {
   $('joinBtn').disabled = !RECORD_URL || !!(g.online && g.mode === 'online' && g.online.status !== 'over' && !g.over && !oppAway(g));
   $('leaveBtn').disabled = !(g.online && g.mode === 'online');
   $('modeNote').textContent =
-    m === 'pvp' ? 'ひとつの画面で、ふたりが交互に置きます。'
-    : m === 'normal' ? '2手先まで読みます。ときどき甘い手も打ちます。'
-    : m === 'strong' ? '5手先まで読み、残り10マスからは最後まで読み切ります。'
-    : m === 'online' ? (RECORD_URL ? 'インターネットで別の人と対戦します。部屋の名前を2人で決めて、同じ名前で入ってください。' : 'オンライン対戦は、公開版（GitHubのページ）で使えます。')
-    : cur === 1 ? '本気の最強です。序盤は事前に深く研究した定跡で打ち、そのあとは毎手5秒ほど読み、残り18マスからは勝ち負けを最後まで読み切ります。接戦では長く考えることがあります。待ったはできません。'
-    : '1手1〜2秒で深く読み、残り12マスからは最後まで読み切ります。待ったはできません。勝つと名前が残ります。';
+    m === 'pvp' ? L('ひとつの画面で、ふたりが交互に置きます。', 'Two players take turns on one screen.')
+    : m === 'normal' ? L('2手先まで読みます。ときどき甘い手も打ちます。', 'Looks 2 moves ahead, and sometimes plays a loose move.')
+    : m === 'strong' ? L('5手先まで読み、残り10マスからは最後まで読み切ります。', 'Looks 5 moves ahead, and reads to the very end once 10 cells are left.')
+    : m === 'online' ? (RECORD_URL ? L('インターネットで別の人と対戦します。部屋の名前を2人で決めて、同じ名前で入ってください。', 'Play someone over the internet. Agree on a room name together and both join with it.')
+      : L('オンライン対戦は、公開版（GitHubのページ）で使えます。', 'Online play works on the published version (the GitHub page).'))
+    : cur === 1 ? L('本気の最強です。序盤は事前に深く研究した定跡で打ち、そのあとは毎手5秒ほど読み、残り18マスからは勝ち負けを最後まで読み切ります。接戦では長く考えることがあります。待ったはできません。',
+      'The all-out Strongest. It opens from a deeply pre-studied opening book, then thinks about 5 seconds a move, and reads win or loss to the very end once 18 cells are left. It may think longer in close games. No undo.')
+    : L('1手1〜2秒で深く読み、残り12マスからは最後まで読み切ります。待ったはできません。勝つと名前が残ります。',
+      'Thinks deeply for 1–2 seconds a move, and reads to the very end once 12 cells are left. No undo. Beat it and your name goes in the hall of fame.');
 }
 function renderVariant() {
   $('tabTorus').setAttribute('aria-selected', String(cur === 0));
   $('tabTwist').setAttribute('aria-selected', String(cur === 1));
-  $('brandDims').textContent = cur === 1 ? 'ねじれトーラス ・ 8 × 6 = 48マス ・ 1周で1マスずれる' : 'トーラス ・ 8 × 6 = 48マス ・ S¹ × S¹';
+  // (English: no-break spaces inside each part, so a narrow screen wraps only between parts)
+  $('brandDims').textContent = cur === 1 ? L('ねじれトーラス ・ 8 × 6 = 48マス ・ 1周で1マスずれる', ['Twisted torus', '8 × 6 = 48 cells', 'shifts 1 cell per lap'].map(x => x.replace(/ /g, '\u00a0')).join('\u00a0· '))
+    : L('トーラス ・ 8 × 6 = 48マス ・ S¹ × S¹', 'Torus · 8 × 6 = 48 cells · S¹ × S¹');
   $('showSpiral').hidden = cur !== 1;
   $('variantNote').textContent = cur === 1
-    ? '大きい輪を1周すると、1マスずれてつながります。大きい輪の向きの列は、48マス全部を通る1本のらせんです。'
-    : '大きい輪を8等分、小さい輪を6等分。端がなく、どの列も一周してつながっています。';
+    ? L('大きい輪を1周すると、1マスずれてつながります。大きい輪の向きの列は、48マス全部を通る1本のらせんです。',
+      'Once around the big ring, the board joins up shifted by one cell. A line along the big ring is a single spiral through all 48 cells.')
+    : L('大きい輪を8等分、小さい輪を6等分。端がなく、どの列も一周してつながっています。',
+      'The big ring is cut into 8, the small ring into 6. No edges: every line wraps all the way around.');
   $('netNote').textContent = cur === 1
-    ? '→ 大きい輪　↑ 小さい輪。外の薄いマスは反対側の端です。左右の端は1マスずれてつながります。'
-    : '→ 大きい輪　↑ 小さい輪。外の薄いマスは反対側の端で、上下・左右がつながっています。';
-  const K = KOMI[cur];
-  $('rulesList').innerHTML = [
+    ? L('→ 大きい輪　↑ 小さい輪。外の薄いマスは反対側の端です。左右の端は1マスずれてつながります。',
+      '→ big ring  ↑ small ring. The faded cells outside show the opposite edge. Left and right join shifted by one cell.')
+    : L('→ 大きい輪　↑ 小さい輪。外の薄いマスは反対側の端で、上下・左右がつながっています。',
+      '→ big ring  ↑ small ring. The faded cells outside show the opposite edge: top joins bottom, left joins right.');
+  const K = KOMI[cur], needB = Math.floor((N - K) / 2) + 1, needW = Math.ceil((N + K) / 2);
+  $('rulesList').innerHTML = (LANG === 'en' ? [
+    'The big ring is cut into 8 and the small ring into 6, making <b>48 cells</b>. There are no edges or corners: every line wraps all the way around.',
+    'On the <b>twisted torus</b>, going once around the big ring shifts you one cell along the small ring. A line along the big ring becomes a single spiral through all 48 cells.',
+    'Placing and flipping work just like normal Othello: you can only play where you sandwich your opponent’s discs. Black moves first.',
+    'Lines come back around, so <b>a new disc can even sandwich against itself</b>. If the rest of a ring is all your opponent’s discs, playing its last empty cell turns the whole ring your color.',
+    `<b>Komi ${K}</b>: at the end, ${K} is added to Black’s disc count before comparing. On this board White (second) gets the last move and has a big edge, so this evens things out. On a full board, Black wins with ${needB}+ discs and White with ${needW}+.`,
+    'If you can’t move, you pass. The game ends when neither player can move.',
+    'Beat the <b>Strongest</b> CPU to put your name in the hall of fame. No undo against the Strongest.'
+  ] : [
     '大きい輪を8等分、小さい輪を6等分した<b>48マス</b>。端も角もなく、どの列も一周してつながっています。',
     '<b>ねじれトーラス</b>は、大きい輪を1周すると小さい輪の向きに1マスずれてつながります。大きい輪の向きの列は48マス全部を通る1本のらせんになります。',
     '置き方・挟み方は普通のオセロと同じ。相手の石を挟めるマスにだけ置けます。黒が先手です。',
     '列は一周して戻ってくるので、<b>置いた石そのものでも挟めます</b>。輪っかの残りが全部相手の石なら、最後の1マスに置くと輪っか全部が自分の色になります。',
-    `<b>コミ${K}</b>：最後に黒の石数に${K}を足して比べます。この盤では最後の一手を打てる後手（白）がとても有利なので、そのハンデです。盤が全部埋まったら、黒は${Math.floor((N - K) / 2) + 1}個以上、白は${Math.ceil((N + K) / 2)}個以上で勝ちです。`,
+    `<b>コミ${K}</b>：最後に黒の石数に${K}を足して比べます。この盤では最後の一手を打てる後手（白）がとても有利なので、そのハンデです。盤が全部埋まったら、黒は${needB}個以上、白は${needW}個以上で勝ちです。`,
     '置けないときはパス。どちらも置けなくなったら終了です。',
     '<b>最強</b>に勝つと名前を残せます。最強戦は待ったなしです。'
-  ].map(x => `<li>${x}</li>`).join('');
+  ]).map(x => `<li>${x}</li>`).join('');
 }
 function refresh() {
   const g = G();
@@ -1638,7 +1724,7 @@ function playMove(k, fromCPU = false) {
   g.last = k; g.moves.push(k);
   if (!fromCPU) g.humanMoves++;
   UI.busy = true;
-  g.lastInfo = `直前：${cname(color)} ${label(k)}（${res.flips.size}枚返し）`;
+  g.lastInfo = { c: color, k, n: res.flips.size };
   setHover(-1);
   V.setHints(null);
   V.place(k, color);
@@ -1657,9 +1743,9 @@ function playMove(k, fromCPU = false) {
   if (res.rings.length) {
     for (const ring of res.rings) V.glow(k, ring.d, ring.n + 1, T_START);
     const q = res.rings[0].q;
-    const which = q === 0 ? (cur === 1 ? '48マスのらせん' : '大きい輪') : q === 1 ? '小さい輪' : '斜めの輪';
+    const which = q === 0 ? (cur === 1 ? L('48マスのらせん', 'the 48-cell spiral') : L('大きい輪', 'the big ring')) : q === 1 ? L('小さい輪', 'the small ring') : L('斜めの輪', 'a diagonal ring');
     const n = res.flips.size;
-    toast(`${which}をひと回り！ ${n}枚まとめて${cname(color)}に`, 'ring', 2400);
+    toast(L(`${which}をひと回り！ ${n}枚まとめて${cname(color)}に`, `All the way round ${which}! ${n} discs turn ${cname(color)}`), 'ring', 2400);
     Sound.ring(T_START, n);
   }
   refresh();
@@ -1670,7 +1756,7 @@ function playMove(k, fromCPU = false) {
 function advance() {
   const g = G(), E0 = E(), next = -g.turn;
   if (E0.legalMoves(g.board, next).length) g.turn = next;
-  else if (E0.legalMoves(g.board, g.turn).length) { toast(`${cname(next)}は置ける場所がないのでパス`, '', 2200); Sound.pass(); }
+  else if (E0.legalMoves(g.board, g.turn).length) { toast(L(`${cname(next)}は置ける場所がないのでパス`, `${cname(next)} has no legal move: pass`), '', 2200); Sound.pass(); }
   else g.over = true;
   refresh();
   if (g.over) finish(); else maybeCPU();
@@ -1701,14 +1787,14 @@ function stopEverything() {
 }
 function tryMove(k) {
   const g = G();
-  if (g.over) { toast('対局は終わりました。「新しいゲーム」で始められます'); return; }
+  if (g.over) { toast(L('対局は終わりました。「新しいゲーム」で始められます', 'The game is over. Press “New game” to play again.')); return; }
   if (UI.busy || isCPUTurn()) return;
   if (g.mode === 'online' && g.online) {
-    if (g.online.status !== 'playing') { toast(g.online.status === 'waiting' ? '部屋に2人そろうと始まります' : '対局は終わりました'); return; }
-    if (isRemoteTurn(g)) { toast('相手の番です'); return; }
+    if (g.online.status !== 'playing') { toast(g.online.status === 'waiting' ? L('部屋に2人そろうと始まります', 'The game starts when both players are in the room.') : L('対局は終わりました', 'The game is over.')); return; }
+    if (isRemoteTurn(g)) { toast(L('相手の番です', "It's your opponent's turn.")); return; }
   }
-  if (g.board[k]) { toast(`${label(k)} にはもう石があります`); return; }
-  if (!UI.legalSet.has(k)) { toast(`${label(k)} では挟めないので置けません`); return; }
+  if (g.board[k]) { toast(L(`${label(k)} にはもう石があります`, `${label(k)} is already taken.`)); return; }
+  if (!UI.legalSet.has(k)) { toast(L(`${label(k)} では挟めないので置けません`, `Can't play ${label(k)}: it doesn't sandwich anything.`)); return; }
   if (playMove(k) && g.mode === 'online' && g.online) {
     const E0 = E(), ends = !E0.legalMoves(g.board, BLACK).length && !E0.legalMoves(g.board, WHITE).length;
     sendRemote(k, ends);
@@ -1733,7 +1819,7 @@ function undo() {
 function switchVariant(T) {
   if (T === cur) return;
   const og = G();
-  if (og.mode === 'online' && og.online && og.online.status !== 'over' && !og.over) { toast('オンライン対戦中は盤を変えられません'); return; }
+  if (og.mode === 'online' && og.online && og.online.status !== 'over' && !og.over) { toast(L('オンライン対戦中は盤を変えられません', "You can't change the board during an online game.")); return; }
   stopEverything(); hideToast(); closeResult(true);
   cur = T; store.set('variant', T);
   mapGhosts();
@@ -1755,17 +1841,21 @@ function applySettingsIfFresh() {
 
 /* ================= online rooms (through the record keeper, by polling) ================= */
 let pollTimer = 0, joining = false;
-function setOnline(html) { $('onlineStatus').innerHTML = html; }
+// the status line is kept as a function, so a language switch can redraw it
+let onlineMsg = null;
+function setOnline(f) { onlineMsg = f; $('onlineStatus').innerHTML = typeof f === 'function' ? f() : f; }
+const ONLINE_INTRO = () => L('同じ部屋の名前を入れた2人で対戦できます。先に入った人が黒です。盤（トーラス・ねじれ）も先に入った人に合わせます。',
+  'Two people who enter the same room name play each other. Whoever joins first plays Black and picks the board (torus or twisted).');
 async function joinRoom() {
   const room = $('roomName').value.trim(), nick = $('nickName').value.trim();
   if (!RECORD_URL || joining) return;
-  if (!room) { setOnline('部屋の名前を入れてください。'); $('roomName').focus(); return; }
+  if (!room) { setOnline(() => L('部屋の名前を入れてください。', 'Please enter a room name.')); $('roomName').focus(); return; }
   store.set('lastName', nick || store.get('lastName', '')); store.set('room', room);
   const og = G(), ended = !!(og.mode === 'online' && og.online && og.online.room === room && (og.over || oppAway(og)));
-  joining = true; $('joinBtn').disabled = true; setOnline('部屋に入っています…');
+  joining = true; $('joinBtn').disabled = true; setOnline(() => L('部屋に入っています…', 'Joining the room…'));
   try {
     const j = await api({ type: 'room_join', game: GAME_ID, room, variant: VKEY[cur], device: Rec.device, nick, ended });
-    if (!j.ok) { setOnline(esc(j.error || '入れませんでした')); return; }
+    if (!j.ok) { const err = j.error; setOnline(() => err ? esc(srvErr(err)) : L('入れませんでした', "Couldn't join the room.")); return; }
     const rv = j.room, T = rv.variant === 'twist' ? 1 : 0;
     stopEverything(); hideToast(); closeResult(true);
     if (T !== cur) { cur = T; store.set('variant', T); mapGhosts(); V.setVariant(T); renderVariant(); if (Rec.tab !== T) { Rec.tab = T; renderHall(); } }
@@ -1774,25 +1864,32 @@ async function joinRoom() {
     V.sync(g.board, -1);
     syncRoom(rv);
     schedulePoll(400);
-  } catch (e) { setOnline('つながりませんでした。少し待ってからもう一度押してください。'); }
+  } catch (e) { setOnline(() => L('つながりませんでした。少し待ってからもう一度押してください。', "Couldn't connect. Wait a moment and try again.")); }
   finally { joining = false; refresh(); }
 }
-function onlineText(g) {
-  const o = g.online; if (!o) return '';
-  if (o.status === 'waiting') return `部屋「${esc(o.room)}」で相手を待っています。相手にこの部屋の名前を伝えてください。あなたは<b>黒</b>です。`;
-  if (g.over || o.status === 'over') return `部屋「${esc(o.room)}」の対局は終わりました。もう一局するときは、2人とも「部屋に入る」を押してください。`;
-  if (oppAway(g)) return `部屋「${esc(o.room)}」の相手が部屋を出ました。相手が入り直すと続きから打てます。新しい相手と始めるときは、もう一度「部屋に入る」を押してください。`;
-  return `部屋「${esc(o.room)}」で対局中。あなたは<b>${cname(seatColor(o.seat))}</b>です。`;
+function onlineText(g) {   // returns a function of the language (the room state is fixed at the time of the call)
+  const o = g.online; if (!o) return () => '';
+  const r = esc(o.room), c = seatColor(o.seat);
+  if (o.status === 'waiting') return () => L(`部屋「${r}」で相手を待っています。相手にこの部屋の名前を伝えてください。あなたは<b>黒</b>です。`,
+    `Waiting for an opponent in room “${r}”. Tell them the room name. You are <b>Black</b>.`);
+  if (g.over || o.status === 'over') return () => L(`部屋「${r}」の対局は終わりました。もう一局するときは、2人とも「部屋に入る」を押してください。`,
+    `The game in room “${r}” is over. To play again, both press “Join room”.`);
+  if (oppAway(g)) return () => L(`部屋「${r}」の相手が部屋を出ました。相手が入り直すと続きから打てます。新しい相手と始めるときは、もう一度「部屋に入る」を押してください。`,
+    `Your opponent left room “${r}”. If they come back, you can carry on. To start with someone new, press “Join room” again.`);
+  return () => L(`部屋「${r}」で対局中。あなたは<b>${cname(c)}</b>です。`, `Playing in room “${r}”. You are <b>${cname(c)}</b>.`);
 }
 function syncRoom(rv) {
   const g = G(), o = g.online; if (!o) return;
-  if (!rv.seat || rv.moves.length < o.moves.length) { o.status = 'over'; setOnline('この部屋では新しい対局が始まりました。入るときはもう一度「部屋に入る」を押してください。'); refresh(); return; }
+  if (!rv.seat) { o.status = 'over'; setOnline(() => L('この部屋では新しい対局が始まりました。入るときはもう一度「部屋に入る」を押してください。', 'A new game has started in this room. To join it, press “Join room” again.')); refresh(); return; }
+  // an older answer that arrives after a newer one (a poll crossing our own move) is ignored
+  if (o.v && rv.v < o.v) return;
+  o.v = rv.v;
   const away = ps => ps.some(p => p.left && p.seat !== o.seat), wasLeft = away(rv.players) && !away(o.players), cameBack = !away(rv.players) && away(o.players);
   o.status = rv.status; o.players = rv.players; o.moves = rv.moves;
   pump();
   if (g.over) o.status = 'over';
-  if (wasLeft && !g.over) toast('相手が部屋を出ました', '', 3000);
-  if (cameBack && !g.over) toast('相手が戻ってきました', '', 2400);
+  if (wasLeft && !g.over) toast(L('相手が部屋を出ました', 'Your opponent left the room'), '', 3000);
+  if (cameBack && !g.over) toast(L('相手が戻ってきました', 'Your opponent is back'), '', 2400);
   setOnline(onlineText(g));
   refresh();
 }
@@ -1803,7 +1900,7 @@ function instantMove(k) {
   g.history.push({ board: Int8Array.from(g.board), turn: g.turn, last: g.last, lastInfo: g.lastInfo, moves: g.moves.length, humanMoves: g.humanMoves });
   g.board[k] = color; for (const c of res.flips.keys()) g.board[c] = color;
   g.last = k; g.moves.push(k);
-  g.lastInfo = `直前：${cname(color)} ${label(k)}（${res.flips.size}枚返し）`;
+  g.lastInfo = { c: color, k, n: res.flips.size };
   if (E0.legalMoves(g.board, -color).length) g.turn = -color;
   else if (!E0.legalMoves(g.board, color).length) g.over = true;
 }
@@ -1815,7 +1912,7 @@ function pump() {
     o.applied++;
     if (i < g.moves.length || g.over) continue;           // already on our board
     const k = mv.m;
-    if (!(Number.isInteger(k) && k >= 0 && k < N && !g.board[k] && E().legal(g.board, k, g.turn))) { toast('相手の手を読み込めませんでした。部屋に入り直してください'); continue; }
+    if (!(Number.isInteger(k) && k >= 0 && k < N && !g.board[k] && E().legal(g.board, k, g.turn))) { toast(L('相手の手を読み込めませんでした。部屋に入り直してください', "Couldn't read your opponent's move. Please rejoin the room.")); continue; }
     if (o.applied < o.moves.length) { instantMove(k); caught = true; continue; }
     if (caught) { V.sync(g.board, g.last); caught = false; refresh(); }
     playMove(k, true);                                     // animated; advance() calls pump() again
@@ -1832,7 +1929,7 @@ function schedulePoll(ms) {
       const res = await fetch(`${RECORD_URL}${RECORD_URL.includes('?') ? '&' : '?'}type=room&key=${encodeURIComponent(o.key)}&device=${Rec.device}&t=${Date.now()}`);
       const j = await res.json();
       if (G().online !== o) return;
-      if (j.ok) syncRoom(j.room); else { setOnline(esc(j.error || '')); o.status = 'over'; refresh(); return; }
+      if (j.ok) syncRoom(j.room); else { const err = j.error; setOnline(() => err ? esc(srvErr(err)) : ''); o.status = 'over'; refresh(); return; }
     } catch (e) {}
     const me = G();
     if (me.online !== o) return;
@@ -1849,15 +1946,15 @@ async function sendRemote(move, over = false) {
       if (G().online !== o) return;
       sent = true;
       if (j.ok) syncRoom(j.room);
-      else if (j.conflict && j.room) { toast('相手と同時に打ったので、局面を部屋に合わせ直します'); resyncRoom(o, j.room); }
-      else if (j.error) toast(j.error);
+      else if (j.conflict && j.room) { toast(L('相手と同時に打ったので、局面を部屋に合わせ直します', 'You both moved at once, so the board is being resynced with the room.')); resyncRoom(o, j.room); }
+      else if (j.error) toast(srvErr(j.error));
     } catch (e) {
       if (G().online !== o) return;
-      toast('通信が不安定です。手を送り直しています…', '', 1400);
+      toast(L('通信が不安定です。手を送り直しています…', 'Connection is unstable. Resending your move…'), '', 1400);
       await new Promise(r => setTimeout(r, 1500 * (tries + 1)));
     }
   }
-  if (!sent) setOnline('手を送れませんでした。もう一度「部屋に入る」を押すと、部屋の局面に合わせ直します。');
+  if (!sent) setOnline(() => L('手を送れませんでした。もう一度「部屋に入る」を押すと、部屋の局面に合わせ直します。', "Couldn't send your move. Press “Join room” again to resync with the room."));
   schedulePoll(800);
 }
 function resyncRoom(o, rv) {
@@ -1872,7 +1969,7 @@ async function leaveRoom(silent) {
   clearTimeout(pollTimer);
   g.online = null;
   try { await api({ type: 'room_leave', key: o.key, device: Rec.device }); } catch (e) {}
-  if (!silent) { setOnline('部屋を出ました。'); refresh(); }
+  if (!silent) { setOnline(() => L('部屋を出ました。', 'You left the room.')); refresh(); }
 }
 
 /* ================= end of game, records ================= */
@@ -1893,39 +1990,52 @@ const Rec = {
 function finish() {
   const g = G(), sc = score(cur, g.board);
   let title, sub = '', kind = '';
+  // title and sub are functions, so an open result card can be redrawn in the other language
+  const T = cur, mode = g.mode;
   if (g.mode === 'pvp' || (g.mode === 'online' && !g.online)) {
-    title = sc.winner === 0 ? '引き分け' : `${cname(sc.winner)}の勝ち`;
+    title = () => sc.winner === 0 ? L('引き分け', 'Draw') : L(`${cname(sc.winner)}の勝ち`, `${cname(sc.winner)} wins`);
   } else if (g.mode === 'online') {
     const won = sc.winner === seatColor(g.online.seat);
-    title = sc.winner === 0 ? '引き分け' : won ? 'あなたの勝ち' : 'あなたの負け';
+    title = () => sc.winner === 0 ? L('引き分け', 'Draw') : won ? L('あなたの勝ち', 'You win') : L('あなたの負け', 'You lose');
     kind = won ? 'win' : '';
-    sub = '同じ部屋でもう一局するときは、2人とも「部屋に入る」を押してください。';
+    sub = () => L('同じ部屋でもう一局するときは、2人とも「部屋に入る」を押してください。', 'To play again in the same room, both press “Join room”.');
     g.online.status = 'over';
     setOnline(onlineText(g));
   } else {
     const won = sc.winner === g.human, lost = sc.winner === -g.human;
-    title = won ? 'あなたの勝ち' : lost ? `CPU（${LEVEL_NAME[g.mode]}）の勝ち` : '引き分け';
+    title = () => won ? L('あなたの勝ち', 'You win') : lost ? L(`CPU（${levelName(mode)}）の勝ち`, `CPU (${levelName(mode)}) wins`) : L('引き分け', 'Draw');
     kind = won ? 'win' : '';
     if (g.mode === 'max') {
-      if (won) sub = cur === 1 ? '本気の最強に勝ちました。すごい。名前を残せます。' : '最強に勝ちました。名前を残せます。';
-      else if (lost) sub = cur === 1 ? '本気の最強は手強い。勝つと名前が残ります。' : 'あと少し。最強に勝つと名前が残ります。';
-      else sub = '引き分け。最強に勝つと名前が残ります。';
+      if (won) sub = () => winSub(T);
+      else if (lost) sub = () => T === 1 ? L('本気の最強は手強い。勝つと名前が残ります。', 'The all-out Strongest is tough. Beat it to get your name in the hall of fame.')
+        : L('あと少し。最強に勝つと名前が残ります。', 'So close! Beat the Strongest to get your name in the hall of fame.');
+      else sub = () => L('引き分け。最強に勝つと名前が残ります。', 'A draw. Beat the Strongest to get your name in the hall of fame.');
       if (!g.recorded) recordResult(g, sc, won ? 'win' : lost ? 'loss' : 'draw');
       if (won) g.champ = g.champ || { done: false };
-    } else if (won && g.mode === 'strong') sub = '次は最強に挑戦してみてください。';
+    } else if (won && g.mode === 'strong') sub = () => L('次は最強に挑戦してみてください。', 'Next, try taking on the Strongest.');
   }
   (kind === 'win' || (g.mode === 'pvp' && sc.winner)) ? Sound.win() : sc.winner === 0 ? Sound.draw() : Sound.lose();
   showResult(title, kind, sc, sub);
 }
+const winSub = T => T === 1 ? L('本気の最強に勝ちました。すごい。名前を残せます。', 'You beat the all-out Strongest. Amazing! Leave your name below.')
+  : L('最強に勝ちました。名前を残せます。', 'You beat the Strongest! Leave your name below.');
+let resState = null;
+function paintResult() {
+  const r = resState;
+  if (!r) { $('resKicker').textContent = L('対局終了', 'Game over'); $('resTitle').textContent = L('あなたの勝ち', 'You win'); return; }   // placeholders until the first game ends
+  const K = KOMI[r.T], sc = r.sc, f = x => typeof x === 'function' ? x() : (x || '');
+  $('resKicker').textContent = L(`${vname(r.T)} ・ 対局終了`, `${vname(r.T)} · Game over`);
+  const h = $('resTitle'); h.textContent = f(r.title); h.className = r.kind;
+  $('resScore').textContent = L(`黒 ${sc.b} ＋ コミ${K} ＝ ${sc.b + K}　対　白 ${sc.w}`, `Black ${sc.b} + komi ${K} = ${sc.b + K}  vs  White ${sc.w}`);
+  $('resSub').textContent = f(r.sub);
+}
 function showResult(title, kind, sc, sub) {
-  const g = G(), K = KOMI[cur];
-  $('resKicker').textContent = `${VNAME[cur]} ・ 対局終了`;
-  const h = $('resTitle'); h.textContent = title; h.className = kind;
-  $('resScore').textContent = `黒 ${sc.b} ＋ コミ${K} ＝ ${sc.b + K}　対　白 ${sc.w}`;
-  $('resSub').textContent = sub;
+  const g = G();
+  resState = { T: cur, title, kind, sc, sub };
+  paintResult();
   const showForm = !!(g.champ && !g.champ.done);
   $('nameForm').hidden = !showForm;
-  if (showForm) { $('nameMsg').textContent = ''; $('nameGo').disabled = false; $('nameInput').value = store.get('lastName', ''); }
+  if (showForm) { setNameMsg(''); $('nameGo').disabled = false; $('nameInput').value = store.get('lastName', ''); }
   $('result').hidden = false;
   renderScore();
   if (showForm) setTimeout(() => $('nameInput').focus(), 50);
@@ -1948,13 +2058,15 @@ function recordResult(g, sc, result) {
     .then(j => { if (j && j.summary) { Rec.remote = j.summary; Rec.status = 'ok'; } renderHall(); return j; })
     .catch(() => { renderHall(); return null; });
 }
+let nameMsgF = '';
+function setNameMsg(f) { nameMsgF = f; $('nameMsg').textContent = typeof f === 'function' ? f() : f; }
 async function submitName(e) {
   e.preventDefault();
   const g = G();
   const name = $('nameInput').value.replace(/[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, '').trim();
-  if (!name) { $('nameMsg').textContent = '名前を入力してください'; return; }
+  if (!name) { setNameMsg(() => L('名前を入力してください', 'Please enter a name.')); return; }
   if (!g.champ || g.champ.done) return;
-  $('nameGo').disabled = true; $('nameMsg').textContent = '登録しています…';
+  $('nameGo').disabled = true; setNameMsg(() => L('登録しています…', 'Saving…'));
   store.set('lastName', name);
   const sc = score(g.T, g.board), v = VKEY[g.T];
   const entry = { name, t: Date.now(), b: sc.b, w: sc.w, side: g.human, device: Rec.device, local: true };
@@ -1964,12 +2076,12 @@ async function submitName(e) {
       if (g.serverResult) await g.serverResult;
       const j = await api({ type: 'champion', game: GAME_ID, gameId: g.id, device: Rec.device, name });
       if (j && j.ok) { shared = true; if (j.summary) { Rec.remote = j.summary; Rec.status = 'ok'; } }
-      else if (j && j.error) $('nameMsg').textContent = j.error;
+      else if (j && j.error) { const err = j.error; setNameMsg(() => srvErr(err)); }
     } catch (err) { /* falls back to this device */ }
   }
   if (!shared) { Rec.champs[v].unshift(entry); store.set('champs', Rec.champs); }
   g.champ.done = true;
-  $('nameMsg').textContent = shared ? '名前を登録しました。下の一覧に載っています。' : 'この端末の記録に残しました。';
+  setNameMsg(shared ? () => L('名前を登録しました。下の一覧に載っています。', 'Name saved. You’re in the list below.') : () => L('この端末の記録に残しました。', 'Saved on this device.'));
   $('nameForm').querySelector('input').disabled = true;
   Rec.tab = g.T; renderHall();
   setTimeout(() => { $('nameForm').hidden = true; $('nameForm').querySelector('input').disabled = false; }, 1600);
@@ -1984,7 +2096,12 @@ async function loadHall() {
 }
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pct = (w, n) => n ? (w / n * 100).toFixed(1) + '%' : '–';
-function fmtDate(t) { const d = new Date(t); return isNaN(d) ? '' : `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`; }
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function fmtDate(t) {
+  const d = new Date(t); if (isNaN(d)) return '';
+  return LANG === 'en' ? `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+}
+const recText = (games, wins) => L(`${games}戦${wins}勝・勝率${pct(wins, games)}`, games ? `${plural(games, 'game', 'games')}, ${plural(wins, 'win', 'wins')} · ${pct(wins, games)} win rate` : 'No games yet');
 function renderHall() {
   const T = Rec.tab, v = VKEY[T];
   document.querySelectorAll('.hall-tabs button').forEach(b => b.setAttribute('aria-selected', String(+b.dataset.t === T)));
@@ -1995,32 +2112,32 @@ function renderHall() {
     $('hallCount' + t).textContent = l.length ? String(l.length) : '';
   }
   $('hallSub').textContent = T === 1
-    ? 'ねじれトーラスの最強は本気です。勝てた人だけが、ここに名前を残せます。'
-    : '最強に勝つと、ここに名前が残ります。';
+    ? L('ねじれトーラスの最強は本気です。勝てた人だけが、ここに名前を残せます。', 'On the twisted torus the Strongest plays all-out. Only those who beat it get their name here.')
+    : L('最強に勝つと、ここに名前が残ります。', 'Beat the Strongest and your name goes here.');
   const mine = Rec.local[v];
   const stats = [];
   if (remote && remote.stats && remote.stats[v]) {
     const s = remote.stats[v];
-    stats.push(['みんなの対最強', `${s.games}戦${s.wins}勝・勝率${pct(s.wins, s.games)}`]);
+    stats.push([L('みんなの対最強', 'Everyone vs. the Strongest'), recText(s.games, s.wins)]);
   }
-  stats.push(['あなたの対最強（この端末）', mine.g ? `${mine.g}戦${mine.w}勝・勝率${pct(mine.w, mine.g)}` : 'まだ対局なし']);
-  stats.push(['コミ', `${KOMI[T]}（黒に足して比べる）`]);
+  stats.push([L('あなたの対最強（この端末）', 'You vs. the Strongest (this device)'), mine.g ? recText(mine.g, mine.w) : L('まだ対局なし', 'No games yet')]);
+  stats.push([L('コミ', 'Komi'), L(`${KOMI[T]}（黒に足して比べる）`, `${KOMI[T]} (added to Black)`)]);
   $('hallStats').innerHTML = stats.map(([a, b]) => `<div class="stat"><span>${esc(a)}</span><b>${esc(b)}</b></div>`).join('');
   const el = $('hallList');
-  if (Rec.status === 'loading') el.innerHTML = '<li class="hall-empty">読み込み中…</li>';
-  else if (!list.length) el.innerHTML = `<li class="hall-empty">${T === 1 ? 'まだ誰も本気の最強に勝っていません。' : 'まだ最強に勝った人はいません。最初の1人になろう。'}</li>`;
+  if (Rec.status === 'loading') el.innerHTML = `<li class="hall-empty">${L('読み込み中…', 'Loading…')}</li>`;
+  else if (!list.length) el.innerHTML = `<li class="hall-empty">${T === 1 ? L('まだ誰も本気の最強に勝っていません。', 'Nobody has beaten the all-out Strongest yet.') : L('まだ最強に勝った人はいません。最初の1人になろう。', 'Nobody has beaten the Strongest yet. Be the first!')}</li>`;
   else el.innerHTML = list.map((c, i) => {
-    const side = c.side === WHITE ? '白で勝利' : '黒で勝利';
-    const rate = c.games ? `その人の対最強：${c.games}戦${c.wins}勝・勝率${pct(c.wins, c.games)}` : '';
+    const side = c.side === WHITE ? L('白で勝利', 'won as White') : L('黒で勝利', 'won as Black');
+    const rate = c.games ? L(`その人の対最強：${recText(c.games, c.wins)}`, `Their record vs. the Strongest: ${recText(c.games, c.wins)}`) : '';
     const me = remote ? (Rec.tag && c.tag === Rec.tag) : c.device === Rec.device;
     return `<li class="champ${me ? ' me' : ''}"><span class="rank">#${list.length - i}</span>
       <span class="nm">${esc(c.name)}</span>
-      <span class="meta">${fmtDate(c.t)} ・ ${side} ・ 黒${c.b} 白${c.w}</span>
+      <span class="meta">${L(`${fmtDate(c.t)} ・ ${side} ・ 黒${c.b} 白${c.w}`, `${fmtDate(c.t)} · ${side}<br>Final: Black ${c.b}, White ${c.w}`)}</span>
       ${rate ? `<span class="rate">${esc(rate)}</span>` : ''}</li>`;
   }).join('');
-  $('hallNote').textContent = remote ? '不適切な名前は管理者が消すことがあります。'
-    : Rec.status === 'error' ? '記録を読み込めませんでした。名前はこの端末に残ります。'
-    : 'このページでは、記録と名前はこの端末に残ります。';
+  $('hallNote').textContent = remote ? L('不適切な名前は管理者が消すことがあります。', 'Inappropriate names may be removed by the admin.')
+    : Rec.status === 'error' ? L('記録を読み込めませんでした。名前はこの端末に残ります。', "Couldn't load the records. Names are kept on this device.")
+    : L('このページでは、記録と名前はこの端末に残ります。', 'On this page, records and names are kept on this device.');
 }
 
 /* ================= wiring ================= */
@@ -2030,9 +2147,9 @@ V.onTap = (k, type) => {
   if (UI.sel === k) { UI.sel = -1; tryMove(k); return; }
   setHover(k); UI.sel = k;
   if (!UI.busy && !g.over && !isCPUTurn()) {
-    if (UI.legalSet.has(k)) toast(`${label(k)}：もう一度タップで置きます（${UI.preview.length}枚返る）`);
-    else if (g.board[k]) toast(`${label(k)} にはもう石があります`);
-    else toast(`${label(k)} では挟めないので置けません`);
+    if (UI.legalSet.has(k)) toast(L(`${label(k)}：もう一度タップで置きます（${UI.preview.length}枚返る）`, `${label(k)}: tap again to play (flips ${UI.preview.length})`));
+    else if (g.board[k]) toast(L(`${label(k)} にはもう石があります`, `${label(k)} is already taken.`));
+    else toast(L(`${label(k)} では挟めないので置けません`, `Can't play ${label(k)}: it doesn't sandwich anything.`));
   }
 };
 V.onHover = k => setHover(k);
@@ -2058,7 +2175,7 @@ $('resetView').addEventListener('click', () => V.resetView());
 $('showSpiral').addEventListener('click', () => {
   // the 大きい輪 line through the front cell: on the twisted board it is one spiral through all 48 cells
   V.glow(kOf(4, 2), 0, N, 0, 6000, 0.62);
-  toast('大きい輪の向きの1本の線が、6周して48マス全部を通り、元に戻ります', '', 4200);
+  toast(L('大きい輪の向きの1本の線が、6周して48マス全部を通り、元に戻ります', 'One line along the big ring winds round 6 times through all 48 cells, then comes back.'), '', 4200);
 });
 document.addEventListener('keydown', e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -2086,19 +2203,29 @@ document.querySelectorAll('input[name="hint"]').forEach(el => el.addEventListene
 }));
 $('resView').addEventListener('click', () => closeResult());
 $('resAgain').addEventListener('click', () => newGame());
-$('pendingChamp').addEventListener('click', () => { const g = G(); showResult('あなたの勝ち', 'win', score(cur, g.board), cur === 1 ? '本気の最強に勝ちました。名前を残せます。' : '最強に勝ちました。名前を残せます。'); });
+$('pendingChamp').addEventListener('click', () => { const g = G(), T = cur; showResult(() => L('あなたの勝ち', 'You win'), 'win', score(cur, g.board), () => T === 1 ? L('本気の最強に勝ちました。名前を残せます。', 'You beat the all-out Strongest. Leave your name below.') : winSub(T)); });
 $('nameForm').addEventListener('submit', submitName);
 document.querySelectorAll('.hall-tabs button').forEach(b => b.addEventListener('click', () => { Rec.tab = +b.dataset.t; renderHall(); }));
 
 const soundBtn = $('soundBtn');
-const paintSound = () => { soundBtn.setAttribute('aria-pressed', String(Sound.on)); soundBtn.title = Sound.on ? '効果音：オン' : '効果音：オフ'; };
+const paintSound = () => { soundBtn.setAttribute('aria-pressed', String(Sound.on)); soundBtn.title = Sound.on ? L('効果音：オン', 'Sound: on') : L('効果音：オフ', 'Sound: off'); };
 soundBtn.addEventListener('click', () => { Sound.on = !Sound.on; paintSound(); if (Sound.on) setTimeout(() => Sound.tick(), 30); });
 paintSound();
+// switch language at runtime: static markup, then everything drawn by script (toasts on screen stay as they are)
+function setLang(l) {
+  LANG = l === 'en' ? 'en' : 'ja';
+  try { localStorage.setItem(LANG_KEY, LANG); } catch (e) {}
+  applyStaticLang();
+  renderVariant(); refresh(); renderHall(); paintSound(); paintResult();
+  if (onlineMsg) setOnline(onlineMsg);
+  if (nameMsgF) setNameMsg(nameMsgF);
+}
+$('langBtn').addEventListener('click', () => setLang(LANG === 'en' ? 'ja' : 'en'));
 const fsBtn = $('fsBtn');
 if (!document.documentElement.requestFullscreen) fsBtn.hidden = true;
 fsBtn.addEventListener('click', () => {
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-  else document.documentElement.requestFullscreen().catch(() => toast('この画面では全画面にできません'));
+  else document.documentElement.requestFullscreen().catch(() => toast(L('この画面では全画面にできません', "Full screen isn't available here.")));
 });
 
 /* ================= boot (keeps the games across live updates of this page) ================= */
@@ -2112,6 +2239,7 @@ function start(data) {
   }
   $({ pvp: 'modePvp', normal: 'modeNormal', strong: 'modeStrong', max: 'modeMax', online: 'modeOnline' }[settings.mode]).checked = true;
   $('nickName').value = store.get('lastName', ''); $('roomName').value = store.get('room', '');
+  setOnline(ONLINE_INTRO); paintResult();
   $('joinBtn').addEventListener('click', joinRoom);
   $('leaveBtn').addEventListener('click', () => { leaveRoom(); });
   $('roomName').addEventListener('keydown', e => { if (e.key === 'Enter') joinRoom(); });
