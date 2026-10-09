@@ -1155,7 +1155,8 @@ self.onmessage = e => {
 
 /* ================= 3D view ================= */
 const stage = $('stage'), canvas = $('gl');
-function initView() {
+function initView(canvas) {
+  let dead = false;   // set once this view is replaced by a fresh one
   let renderer;
   try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); if (!renderer.getContext()) throw 0; } catch (e) { return null; }
   const api = { onTap: null, onHover: null };
@@ -1378,6 +1379,7 @@ function initView() {
   let lastAspect = 0;
   function defaultDistance() { const tv = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)), th = tv * camera.aspect; return Math.max(5.0 / th, 3.75 / tv); }
   function resize() {
+    if (dead) return;
     const w = Math.max(1, stage.clientWidth), h = Math.max(1, stage.clientHeight);
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
     const d = defaultDistance(); controls.maxDistance = Math.max(32, d * 1.6);
@@ -1421,6 +1423,7 @@ function initView() {
   canvas.addEventListener('pointerleave', () => { if (api.onHover) api.onHover(-1); });
 
   function frame(now) {
+    if (dead) return;
     requestAnimationFrame(frame);
     runTweens(viewTweens, now); runTweens(tweens, now);
     pvMat.opacity = 0.7 + 0.25 * Math.sin(now / 170);
@@ -1522,13 +1525,52 @@ function initView() {
     spin(dir) { spinTo(spinTarget + dir * DU); },
     resetView
   });
+  api.isLost = () => renderer.getContext().isContextLost();
+  api.dispose = () => { dead = true; try { controls.dispose(); renderer.dispose(); } catch (e) {} };
   return api;
 }
-const V = initView() || (() => {
+const V = initView(canvas) || (() => {
   const p = document.createElement('p'); p.className = 'nogl'; p.id = 'nogl'; stage.append(p); paintNoGL();
   const noop = () => {};
   return { onTap: null, onHover: null, setBoard: noop, sync: noop, place: noop, capture: noop, setHover: noop, setLast: noop, setPreview: noop, setOwnership: noop, spiral: noop, clearAnims: noop, roll: noop, spin: noop, resetView: noop };
 })();
+
+// If the browser takes the 3D drawing away (too many 3D pages open at once, the graphics chip resetting…)
+// and doesn't give it back, build a fresh 3D view on a new canvas and carry on with the same game.
+const GL = { canvas, timer: 0, revives: 0 };
+function watchGL(cv) {
+  cv.addEventListener('webglcontextlost', () => { clearTimeout(GL.timer); GL.timer = setTimeout(reviveGL, 1500); });
+  cv.addEventListener('webglcontextrestored', () => clearTimeout(GL.timer));
+}
+function reviveGL() {
+  if (document.hidden) { document.addEventListener('visibilitychange', reviveGL, { once: true }); return; }
+  if (!V.isLost || !V.isLost()) return;   // it came back by itself
+  if (++GL.revives > 6) { glGaveUp(); return; }
+  const fresh = GL.canvas.cloneNode(false);
+  GL.canvas.replaceWith(fresh); GL.canvas = fresh;
+  const hooks = { onTap: V.onTap, onHover: V.onHover };
+  V.dispose();
+  const api = initView(fresh);
+  if (!api) { glGaveUp(); return; }
+  Object.assign(api, hooks);
+  for (const k of Object.keys(api)) if (k !== 'onTap' && k !== 'onHover') V[k] = api[k];
+  watchGL(fresh);
+  redrawGL();
+}
+function glGaveUp() {
+  if (document.getElementById('glStopped')) return;
+  const p = document.createElement('p'); p.className = 'nogl'; p.id = 'glStopped';
+  p.dataset.ja = '3D表示が止まりました。ほかのタブを少し閉じてから、ページを再読み込みしてください。展開図ではこのまま遊べます。';
+  p.dataset.en = 'The 3D view stopped. Close a few other tabs, then reload the page. You can keep playing on the flat map.';
+  p.textContent = L(p.dataset.ja, p.dataset.en); stage.append(p);
+}
+if (V.dispose) watchGL(canvas);
+function redrawGL() {
+  if (UI.est) { UI.est = false; $('estBtn').setAttribute('aria-pressed', 'false'); }
+  V.setBoard(curT, curN); const g = G(); V.sync(colorsOf(g.b), g.b.last);
+  if (g.over && g.result && g.result.ownerArr) V.setOwnership(g.result.ownerArr, colorsOf(g.b));
+  refresh();
+}
 
 /* ================= game state ================= */
 const settings = {
