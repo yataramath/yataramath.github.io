@@ -927,9 +927,20 @@ const DEVICE = store.get('device', null) || (() => { const d = newId(); store.se
 
 /* ================= sound ================= */
 const Sound = (() => {
-  let ctx = null, master = null, on = store.get('sound', true);
+  let ctx = null, master = null, on = store.get('sound', true), resumedAt = 0;
   const bufs = { stone: [], capture: [], pass: [] };
   let loading = null;
+  const decode = (c, ab) => new Promise((ok, ng) => { const p = c.decodeAudioData(ab, ok, ng); if (p && p.then) p.then(ok, ng); });
+  // decode the recordings right away (an offline context needs no tap), so even the first stone sounds real
+  try {
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (OAC && SOUNDS) {
+      const oc = new OAC(1, 1, 44100);
+      loading = Promise.all(Object.entries(SOUNDS).map(([k, list]) => Promise.all(list.map(async (u, i) => {
+        try { bufs[k][i] = await decode(oc, await (await fetch(u)).arrayBuffer()); } catch (e) {}
+      }))));
+    }
+  } catch (e) { loading = null; }
   function ensure() {
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -937,13 +948,14 @@ const Sound = (() => {
       try { ctx = new AC(); } catch (e) { return null; }
       master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
     }
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    if (ctx.state === 'suspended') { ctx.resume().catch(() => {}); resumedAt = performance.now(); }
     if (!loading && SOUNDS) loading = Promise.all(Object.entries(SOUNDS).map(([k, list]) => Promise.all(list.map(async (u, i) => {
-      try { const ab = await (await fetch(u)).arrayBuffer(); bufs[k][i] = await ctx.decodeAudioData(ab); } catch (e) {}
+      try { bufs[k][i] = await decode(ctx, await (await fetch(u)).arrayBuffer()); } catch (e) {}
     }))));
     return ctx;
   }
-  const ready = () => on && ctx && ctx.state === 'running';
+  // just after a tap the context may still be waking up (Safari): sounds scheduled then still play
+  const ready = () => on && ctx && (ctx.state === 'running' || (ctx.state === 'suspended' && performance.now() - resumedAt < 1500));
   function playBuf(kind, delay = 0, gain = 1, idx = -1) {
     if (!ready()) return;
     const list = bufs[kind].filter(Boolean);
