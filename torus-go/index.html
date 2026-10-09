@@ -193,19 +193,19 @@ html[lang="en"] .seg label{padding:4px 8px}
 .online-status{margin:0;font-size:13px}
 .online-status b{color:var(--accent)}
 
-/* flat map: a small card in the top-right corner of the 3D view, with two rows of the board's continuation around it */
-.minimap{position:absolute;top:14px;right:14px;z-index:3;width:min(250px,36%);padding:8px 9px 9px;border-radius:14px;border:1px solid var(--line);
-  background:var(--panel);background:color-mix(in srgb,var(--panel) 88%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 6px 18px var(--shadow)}
-.mm-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:0 0 6px;font-size:12px;font-weight:700;color:var(--ink)}
-.mm-toggle{width:24px;height:24px;border-radius:7px;border:1px solid var(--line);background:transparent;cursor:pointer;display:grid;place-items:center;font-size:15px;line-height:1;color:var(--muted)}
-.mm-toggle:hover{border-color:var(--ink);color:var(--ink)}
-.mm-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.minimap.min{width:auto}
-.minimap.min .mm-head{margin:0}
-.minimap.min .net,.minimap.min .mm-note{display:none}
-.mm-note{margin:6px 0 0;font-size:10.5px;line-height:1.45;color:var(--muted)}
-@container stage (max-width: 700px){ .minimap{width:min(168px,42%);top:10px;right:10px;padding:6px 7px 7px} .mm-note{display:none}
-  .brand{max-width:calc(100% - min(168px,42%) - 34px)} .brand h1{font-size:clamp(20px,6.6cqi,26px)} }
+/* flat map: in the side panel, under the game buttons. While a game is on, the settings fold away so it sits right under the score */
+.mapsec{display:grid;gap:6px}
+.map-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.mapsec .net{max-width:380px;justify-self:center}
+.map-note{margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
+@media (min-width: 881px){ .mapsec .net{max-width:min(380px,max(240px,calc(100vh - 515px)))} }   /* on a short screen it shrinks to stay in view */
+.side.playing:not(.show-set) .set-detail{display:none!important}
+.set-toggle{display:none;align-items:center;gap:8px;justify-self:start;height:32px;padding:0 13px;border-radius:999px;border:1px solid var(--line);background:transparent;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--muted)}
+.set-toggle:hover{border-color:var(--ink);color:var(--ink)}
+.set-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.set-toggle::after{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg)}
+.set-toggle[aria-expanded="true"]::after{transform:translateY(1px) rotate(-135deg)}
+.side.playing .set-toggle{display:inline-flex}
 .net{width:100%;height:auto;display:block;border-radius:6px;background:var(--wood);cursor:pointer;touch-action:manipulation}
 
 .rules summary{cursor:pointer;font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--muted);list-style:none;display:flex;align-items:center;gap:6px}
@@ -277,11 +277,6 @@ html[lang="en"] .seg label{padding:4px 8px}
       <h1 data-en-html="Torus &lt;span&gt;Go&lt;/span&gt;">トーラス<span>囲碁</span></h1>
       <p id="brandDims">トーラス ・ 9 × 9 = 81路</p>
     </header>
-    <aside class="minimap" id="minimap" aria-labelledby="netTitle">
-      <div class="mm-head"><span id="netTitle" data-en="Flat map">展開図</span><button type="button" class="mm-toggle" id="mmToggle" aria-expanded="true" aria-label="展開図を小さくする">−</button></div>
-      <svg class="net" id="net" viewBox="0 0 100 100" role="img" aria-label="盤面の展開図" data-en-attr="aria-label:Flat map of the board"></svg>
-      <p class="mm-note" id="netNote"></p>
-    </aside>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="viewpad" role="group" aria-label="視点の操作" data-en-attr="aria-label:View controls">
       <div class="vp" title="表面を小さい輪の向きに送ります。内側を手前に出せます。" data-en-attr="title:Rolls the surface along the small ring (through the hole), bringing the inner side to the front.">
@@ -323,15 +318,15 @@ html[lang="en"] .seg label{padding:4px 8px}
   </main>
 
   <aside class="side">
-    <div class="tabs" role="tablist" aria-label="盤の種類" data-en-attr="aria-label:Board type">
+    <div class="tabs set-detail" role="tablist" aria-label="盤の種類" data-en-attr="aria-label:Board type">
       <button type="button" role="tab" id="tabTorus" aria-selected="true" data-en="Torus">トーラス</button>
       <button type="button" role="tab" id="tabTwist" aria-selected="false" data-en="Twisted torus">ねじれトーラス</button>
     </div>
-    <div class="tabs small" role="tablist" aria-label="盤の大きさ" data-en-attr="aria-label:Board size">
+    <div class="tabs small set-detail" role="tablist" aria-label="盤の大きさ" data-en-attr="aria-label:Board size">
       <button type="button" role="tab" id="size9" aria-selected="true" data-en="9×9 (81 points)">9路（81点）</button>
       <button type="button" role="tab" id="size13" aria-selected="false" data-en="13×13 (169 points)">13路（169点）</button>
     </div>
-    <p class="note" id="variantNote"></p>
+    <p class="note set-detail" id="variantNote"></p>
 
     <section aria-label="対局の状況" data-en-attr="aria-label:Game status">
       <div class="players">
@@ -356,7 +351,8 @@ html[lang="en"] .seg label{padding:4px 8px}
     </section>
 
     <section class="settings" aria-label="設定" data-en-attr="aria-label:Settings">
-      <div class="row">
+      <button type="button" class="set-toggle" id="setToggle" aria-expanded="false"></button>
+      <div class="row set-detail">
         <span class="lbl" id="lblMode" data-en="Opponent">対戦相手</span>
         <div class="seg" role="radiogroup" aria-labelledby="lblMode">
           <input type="radio" name="mode" id="modePvp" value="pvp" checked><label for="modePvp" data-en="2 players">ふたりで</label>
@@ -366,8 +362,8 @@ html[lang="en"] .seg label{padding:4px 8px}
           <input type="radio" name="mode" id="modeOnline" value="online"><label for="modeOnline" data-en="Online">オンライン</label>
         </div>
       </div>
-      <p class="note" id="modeNote"></p>
-      <div class="row" id="colorRow">
+      <p class="note set-detail" id="modeNote"></p>
+      <div class="row set-detail" id="colorRow">
         <span class="lbl" id="lblColor" data-en="Your color">あなたの色</span>
         <div class="seg" role="radiogroup" aria-labelledby="lblColor">
           <input type="radio" name="human" id="humanB" value="b" checked><label for="humanB" data-en="Black (first)">黒（先手）</label>
@@ -375,10 +371,10 @@ html[lang="en"] .seg label{padding:4px 8px}
         </div>
       </div>
       <div class="online" id="onlineBox" hidden>
-        <div class="field"><label for="roomName" data-en="Room name (shared password)">部屋の名前（合言葉）</label><input id="roomName" maxlength="24" placeholder="例：やたら123" autocomplete="off" data-en-attr="placeholder:e.g. yatara123"></div>
-        <div class="field"><label for="nickName" data-en="Your name">あなたの名前</label><input id="nickName" maxlength="16" placeholder="ニックネーム" autocomplete="nickname" data-en-attr="placeholder:Nickname"></div>
+        <div class="field set-detail"><label for="roomName" data-en="Room name (shared password)">部屋の名前（合言葉）</label><input id="roomName" maxlength="24" placeholder="例：やたら123" autocomplete="off" data-en-attr="placeholder:e.g. yatara123"></div>
+        <div class="field set-detail"><label for="nickName" data-en="Your name">あなたの名前</label><input id="nickName" maxlength="16" placeholder="ニックネーム" autocomplete="nickname" data-en-attr="placeholder:Nickname"></div>
         <div class="row-btns">
-          <button type="button" class="btn accent" id="joinBtn" data-en="Join room">部屋に入る</button>
+          <button type="button" class="btn accent set-detail" id="joinBtn" data-en="Join room">部屋に入る</button>
           <button type="button" class="btn ghost-btn" id="leaveBtn" disabled data-en="Leave">出る</button>
         </div>
         <p class="online-status" id="onlineStatus">同じ部屋の名前を入れた2人で対戦できます。先に入った人が黒です。</p>
@@ -388,6 +384,12 @@ html[lang="en"] .seg label{padding:4px 8px}
         <button type="button" class="btn ghost-btn" id="undo" data-en="Undo">待った</button>
         <button type="button" class="btn solid" id="newGame" data-en="New game">新しい対局</button>
       </div>
+    </section>
+
+    <section class="mapsec" aria-labelledby="netTitle">
+      <div class="map-head"><h2 id="netTitle" data-en="Flat map">展開図</h2></div>
+      <svg class="net" id="net" viewBox="0 0 100 100" role="img" aria-label="盤面の展開図" data-en-attr="aria-label:Flat map of the board"></svg>
+      <p class="map-note" id="netNote"></p>
     </section>
 
 
@@ -1649,6 +1651,7 @@ function renderSettings() {
     : L('オンライン対戦は、公開版（GitHubのページ）で使えます。', 'Online play works on the published version (the GitHub page).');
   $('joinBtn').disabled = !RECORD_URL || !!(g.online && g.mode === 'online' && g.online.status !== 'over' && !g.over && !oppAway(g));
   $('leaveBtn').disabled = !(g.online && g.mode === 'online');
+  paintSide();
 }
 function renderVariant() {
   $('tabTorus').setAttribute('aria-selected', String(curT === 0)); $('tabTwist').setAttribute('aria-selected', String(curT === 1));
@@ -1659,7 +1662,7 @@ function renderVariant() {
   $('variantNote').textContent = curT
     ? L('大きい輪を1周すると、小さい輪の向きに1つずれてつながります。横の線は全部の点を通る1本のらせんです。', 'Once around the big ring, the board joins up shifted one step along the small ring. The horizontal lines become a single spiral through every point.')
     : L('端も隅もない碁盤です。上下・左右がつながっていて、どこに打っても盤の真ん中です。', 'A Go board with no edges or corners. Top joins bottom and left joins right, so wherever you play, you are in the middle of the board.');
-  $('netNote').textContent = curT ? L('枠の外の薄いところは反対側の端の続き。左右は1つずれてつながります。ここを押しても打てます。', 'The faded border continues from the opposite edge; left and right join shifted by one. You can play here too.') : L('枠の外の薄いところは、反対側の端の続きです。ここを押しても打てます。', 'The faded border shows the board continuing from the opposite edge. You can play here too.');
+  $('netNote').textContent = curT ? L('青い枠の中が盤全体。外の薄いところは反対側の端の続きで、左右は1つずれてつながります。展開図を押しても打てます。', 'Inside the blue frame is the whole board. The faded border continues from the opposite edge; left and right join shifted by one. You can play on the map too.') : L('青い枠の中が盤全体。外の薄いところは反対側の端の続きです。展開図を押しても打てます。', 'Inside the blue frame is the whole board. The faded border shows it continuing from the opposite edge. You can play on the map too.');
   const K = KOMI[curN];
   const sabaki = '<a href="https://github.com/SabakiHQ/Sabaki" target="_blank" rel="noopener">Sabaki</a>';
   $('rulesList').innerHTML = (LANG === 'en' ? [
@@ -2124,14 +2127,19 @@ V.onTap = (p, type) => {
 };
 V.onHover = p => setHover(p);
 netEl.addEventListener('click', e => { const p = netPoint(e); if (p >= 0) tryMove(p); });
-// the flat map can be folded away (remembered on this device)
-function paintMM() {
-  const mm = $('minimap'), bt = $('mmToggle'), min = mm.classList.contains('min');
-  bt.textContent = min ? '+' : '−'; bt.setAttribute('aria-expanded', String(!min));
-  bt.setAttribute('aria-label', min ? L('展開図を開く', 'Open the flat map') : L('展開図を小さくする', 'Collapse the flat map'));
+// while a game is on, the side shows the score, the flat map and the game buttons; the settings fold away
+function paintSide() {
+  const g = G(), side = document.querySelector('.side');
+  const playing = !g.over && (g.moves.length > 0 || (g.mode === 'online' && !!g.online && g.online.status === 'playing'));
+  if (playing && !UI.wasPlaying) side.classList.remove('show-set');   // each new game starts folded
+  UI.wasPlaying = playing;
+  side.classList.toggle('playing', playing);
+  $('joinBtn').classList.toggle('set-detail', !(g.mode === 'online' && oppAway(g)));   // opponent gone: "Join room" stays at hand to start over
+  const open = side.classList.contains('show-set'), b = $('setToggle');
+  b.textContent = open ? L('設定をとじる', 'Hide settings') : L('対戦相手・盤の設定', 'Opponent & board settings');
+  b.setAttribute('aria-expanded', String(open));
 }
-if (store.get('netMin', false)) $('minimap').classList.add('min');
-$('mmToggle').addEventListener('click', () => { const mm = $('minimap'); mm.classList.toggle('min'); store.set('netMin', mm.classList.contains('min')); paintMM(); });
+$('setToggle').addEventListener('click', () => { document.querySelector('.side').classList.toggle('show-set'); paintSide(); });
 netEl.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') setHover(netPoint(e)); });
 netEl.addEventListener('pointerleave', () => setHover(-1));
 $('rollUp').addEventListener('click', () => V.roll(1)); $('rollDown').addEventListener('click', () => V.roll(-1));
@@ -2187,7 +2195,7 @@ fsBtn.addEventListener('click', () => { if (document.fullscreenElement) document
 function setLang(l) {
   LANG = l; try { localStorage.setItem(LANG_KEY, l); } catch (e) {}
   applyStaticLang();
-  paintSound(); paintNoGL(); paintOnline(); paintNameMsg(); paintResult(); paintMM();
+  paintSound(); paintNoGL(); paintOnline(); paintNameMsg(); paintResult();
   renderVariant(); refresh(); renderHall();
 }
 $('langBtn').addEventListener('click', () => setLang(LANG === 'en' ? 'ja' : 'en'));
@@ -2200,7 +2208,7 @@ function start() {
   $('nickName').value = store.get('lastName', '');
   V.setBoard(curT, curN);
   const g = G(); V.sync(colorsOf(g.b), g.b.last);
-  applyStaticLang(); paintOnline(); paintMM();
+  applyStaticLang(); paintOnline();
   renderVariant(); refresh(); renderHall(); loadHall(); nextTurn();
 }
 start();

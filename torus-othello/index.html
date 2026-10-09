@@ -199,19 +199,20 @@ html[lang="en"] .toast{white-space:normal;width:max-content;text-align:center;li
 .online-status{margin:0;font-size:13px}
 .online-status b{color:var(--accent)}
 
-/* flat map: a small card in the top-right corner of the 3D view, with two cells of the board's continuation around it */
-.minimap{position:absolute;top:14px;right:14px;z-index:3;width:min(250px,36%);padding:8px 9px 9px;border-radius:14px;border:1px solid var(--line);
-  background:var(--panel);background:color-mix(in srgb,var(--panel) 88%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 6px 18px var(--shadow)}
-.mm-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:0 0 6px;font-size:12px;font-weight:700;color:var(--ink)}
-.mm-toggle{width:24px;height:24px;border-radius:7px;border:1px solid var(--line);background:transparent;cursor:pointer;display:grid;place-items:center;font-size:15px;line-height:1;color:var(--muted)}
-.mm-toggle:hover{border-color:var(--ink);color:var(--ink)}
-.mm-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.minimap.min{width:auto}
-.minimap.min .mm-head{margin:0}
-.minimap.min .net,.minimap.min .mm-note{display:none}
-.mm-note{margin:6px 0 0;font-size:10.5px;line-height:1.45;color:var(--muted)}
-@container stage (max-width: 700px){ .minimap{width:min(168px,42%);top:10px;right:10px;padding:6px 7px 7px} .mm-note{display:none}
-  .brand{max-width:calc(100% - min(168px,42%) - 34px)} .brand h1{font-size:clamp(20px,6.6cqi,26px)} }
+/* flat map: in the side panel, under the game buttons. While a game is on, the settings fold away so it sits right under the score */
+.mapsec{display:grid;gap:6px}
+.map-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.mapsec h2{margin:0;font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--muted)}
+.mapsec .net{max-width:380px;justify-self:center}
+.map-note{margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
+@media (min-width: 881px){ .mapsec .net{max-width:min(380px,max(240px,calc(100vh - 470px)))} }   /* on a short screen it shrinks to stay in view */
+.side.playing:not(.show-set) .set-detail{display:none!important}
+.set-toggle{display:none;align-items:center;gap:8px;justify-self:start;height:32px;padding:0 13px;border-radius:999px;border:1px solid var(--line);background:transparent;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--muted)}
+.set-toggle:hover{border-color:var(--ink);color:var(--ink)}
+.set-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.set-toggle::after{content:"";width:6px;height:6px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg)}
+.set-toggle[aria-expanded="true"]::after{transform:translateY(1px) rotate(-135deg)}
+.side.playing .set-toggle{display:inline-flex}
 .net{display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(10,1fr);aspect-ratio:12/10;gap:1px;
   background:var(--felt-line);border:1.5px solid var(--felt-line);border-radius:5px;overflow:hidden;width:100%;touch-action:manipulation}
 .cell,.ghost{position:relative;background:var(--felt);display:grid;place-items:center;overflow:hidden;min-width:0;min-height:0}
@@ -303,11 +304,6 @@ html[lang="en"] .toast{white-space:normal;width:max-content;text-align:center;li
       <h1 data-en-html="Torus <span>Othello</span>">トーラス<span>オセロ</span></h1>
       <p id="brandDims">8 × 6 = 48マス</p>
     </header>
-    <aside class="minimap" id="minimap" aria-labelledby="netTitle">
-      <div class="mm-head"><span id="netTitle" data-en="Flat map">展開図</span><button type="button" class="mm-toggle" id="mmToggle" aria-expanded="true" aria-label="展開図を小さくする">−</button></div>
-      <div class="net" id="net" role="grid" aria-label="盤面の展開図。矢印キーで移動、Enterで置く" data-en-attr="aria-label:Flat map of the board. Arrow keys move, Enter plays"></div>
-      <p class="mm-note" id="netNote"></p>
-    </aside>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="viewpad" role="group" aria-label="視点の操作" data-en-attr="aria-label:View controls">
       <div class="vp" title="表面を小さい輪の向きに送ります。内側のマスを手前に出せます。" data-en-attr="title:Rolls the surface along the small ring, bringing the inner cells to the front.">
@@ -348,11 +344,11 @@ html[lang="en"] .toast{white-space:normal;width:max-content;text-align:center;li
   </main>
 
   <aside class="side">
-    <div class="variant" role="tablist" aria-label="盤の種類" data-en-attr="aria-label:Board type">
+    <div class="variant set-detail" role="tablist" aria-label="盤の種類" data-en-attr="aria-label:Board type">
       <button type="button" role="tab" id="tabTorus" aria-selected="true" data-t="0" data-en="Torus">トーラス</button>
       <button type="button" role="tab" id="tabTwist" aria-selected="false" data-t="1" data-en="Twisted torus">ねじれトーラス</button>
     </div>
-    <p class="variant-note" id="variantNote"></p>
+    <p class="variant-note set-detail" id="variantNote"></p>
 
     <section aria-label="スコア" data-en-attr="aria-label:Score">
       <div class="players">
@@ -376,7 +372,8 @@ html[lang="en"] .toast{white-space:normal;width:max-content;text-align:center;li
     </section>
 
     <section class="settings" aria-label="設定" data-en-attr="aria-label:Settings">
-      <div class="row">
+      <button type="button" class="set-toggle" id="setToggle" aria-expanded="false"></button>
+      <div class="row set-detail">
         <span class="lbl" id="lblMode" data-en="Opponent">対戦相手</span>
         <div class="seg" role="radiogroup" aria-labelledby="lblMode">
           <input type="radio" name="mode" id="modePvp" value="pvp" checked><label for="modePvp" data-en="2 players">ふたりで</label>
@@ -386,8 +383,8 @@ html[lang="en"] .toast{white-space:normal;width:max-content;text-align:center;li
           <input type="radio" name="mode" id="modeOnline" value="online"><label for="modeOnline" data-en="Online">オンライン</label>
         </div>
       </div>
-      <p class="note" id="modeNote"></p>
-      <div class="row" id="colorRow">
+      <p class="note set-detail" id="modeNote"></p>
+      <div class="row set-detail" id="colorRow">
         <span class="lbl" id="lblColor" data-en="Your color">あなたの色</span>
         <div class="seg" role="radiogroup" aria-labelledby="lblColor">
           <input type="radio" name="human" id="humanB" value="b" checked><label for="humanB" data-en="Black (first)">黒（先手）</label>
@@ -395,15 +392,15 @@ html[lang="en"] .toast{white-space:normal;width:max-content;text-align:center;li
         </div>
       </div>
       <div class="online" id="onlineBox" hidden>
-        <div class="field"><label for="roomName" data-en="Room name (shared password)">部屋の名前（合言葉）</label><input id="roomName" maxlength="24" placeholder="例：やたら123" autocomplete="off" data-en-attr="placeholder:e.g. yatara123"></div>
-        <div class="field"><label for="nickName" data-en="Your name">あなたの名前</label><input id="nickName" maxlength="16" placeholder="ニックネーム" autocomplete="nickname" data-en-attr="placeholder:Nickname"></div>
+        <div class="field set-detail"><label for="roomName" data-en="Room name (shared password)">部屋の名前（合言葉）</label><input id="roomName" maxlength="24" placeholder="例：やたら123" autocomplete="off" data-en-attr="placeholder:e.g. yatara123"></div>
+        <div class="field set-detail"><label for="nickName" data-en="Your name">あなたの名前</label><input id="nickName" maxlength="16" placeholder="ニックネーム" autocomplete="nickname" data-en-attr="placeholder:Nickname"></div>
         <div class="row-btns">
-          <button type="button" class="btn accent" id="joinBtn" data-en="Join room">部屋に入る</button>
+          <button type="button" class="btn accent set-detail" id="joinBtn" data-en="Join room">部屋に入る</button>
           <button type="button" class="btn ghost-btn" id="leaveBtn" disabled data-en="Leave">出る</button>
         </div>
         <p class="online-status" id="onlineStatus">同じ部屋の名前を入れた2人で対戦できます。先に入った人が黒です。盤（トーラス・ねじれ）も先に入った人に合わせます。</p>
       </div>
-      <div class="row">
+      <div class="row set-detail">
         <span class="lbl" id="lblHint" data-en="Legal moves">置けるマス</span>
         <div class="seg" role="radiogroup" aria-labelledby="lblHint">
           <input type="radio" name="hint" id="hintOn" value="on" checked><label for="hintOn" data-en="Show">表示</label>
@@ -415,6 +412,12 @@ html[lang="en"] .toast{white-space:normal;width:max-content;text-align:center;li
         <button type="button" class="btn ghost-btn" id="undo" data-en="Undo">待った</button>
         <button type="button" class="btn solid" id="newGame" data-en="New game">新しいゲーム</button>
       </div>
+    </section>
+
+    <section class="mapsec" aria-labelledby="netTitle">
+      <div class="map-head"><h2 id="netTitle" data-en="Flat map">展開図</h2></div>
+      <div class="net" id="net" role="grid" aria-label="盤面の展開図。矢印キーで移動、Enterで置く" data-en-attr="aria-label:Flat map of the board. Arrow keys move, Enter plays"></div>
+      <p class="map-note" id="netNote"></p>
     </section>
 
     <details class="rules" id="rules">
@@ -1006,7 +1009,7 @@ const store = {
 const newId = () => { let s = ''; const a = 'abcdefghijkmnpqrstuvwxyz23456789'; for (let i = 0; i < 14; i++) s += a[(Math.random() * a.length) | 0]; return s; };
 
 /* ================= sound ================= */
-// 石を置く音・返す音は録音（Sabaki の碁石の音、MIT License）を少し軽く再生。輪っか・勝ち負けはシンセ
+// 石を置く音は録音（Sabaki の碁石の音、MIT License）。返す音・輪っか・勝ち負けはシンセ
 const SOUNDS = {"stone": ["data:audio/mpeg;base64,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", "data:audio/mpeg;base64,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", "data:audio/mpeg;base64,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", "data:audio/mpeg;base64,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", "data:audio/mpeg;base64,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kjMLDVra4kB8wKWKuHzc2SuMWz9mhPHkSKyZta1pK53SJGllza9nqPyu3///lDgY8RASAAgESgwkMYOGKTAV6TNSpQraWyJRRhDaQ4+y5XMR7mGivApWqJHqESUmJolsRp4G+8kSigGK0qhaOMeoRhcmYcgKlrFnb0qsl7RxBHI5lguRpEWDmL+TohJioQwsiAMs0CbE6VLCwnyqsngLalYpuP1S2MjKjzbfISfKr1wZQkokAUkIlGBQKDIgAkBW2VERcOliJUWjEmZbRCU1U9JRQ8WQ46c7vF4MGCIzc1Em9UIl+lK6YjaOrmq/rPnUP5/+r//+f3XhCxySatUCAApasSS5FUL1DnpXKqpaO0suVMTeF9oacllaPac4KHSq//uSxBECmKmdMqww/ssyM+YCsPAA3OQtZ94pRzjutAfuXSyhqww7VdyHmjCpYQ4MKXhJ22XcwFlb6sUk7OlYWdNxeprLsvm4T8PY9TruI3CStegJbT9yKCI7A8OyugUDuBE2Tocac8NTcfUw+n9lxOSKyybDg6Vax5G8PjdGapnz+yVEiQzr57sXIbDjDRLcWn6rFilCjSsnVziz7Js53HXoS/V0RiTnYikNRcLHNJN0/o//Xc4A9VQ9Gwvskg7qakJHttyL0KLqOMSYg98Uhx+xwCRklch/MalGoUbNFXD5yO8uBEDVL6nDhBukYO5Dg5CxIhCDzKYbp6F6LAXxVi6FiJGxHgqzxMoGwWwtouK4bjREDOE50PJomziUkR072X56drpVIQhrHR9RRwNnQlFhLnQnzwWNpOGcScPp+qlXEm1eAk2eZduKxeBDgPGS8F42x307k9rdwZLmLMnW1y3ncm7QGbtLWx1muywKwYsODD22OWa6zv///////////62qH60AABEAAAAAxLA4b7eP+atQtWarf6Bxem7U/wCDIP/7ksQOgBi1uSCZqgAAAAA0g4AABGoLrVg0BA3mBuctSXDlwMKUAxYwDNkiiioo+BhzgLFhCEAUQCYWox/goFAXCARAgAAAAgoZGpLJomk/w4oQkAYFCGg2DQxsDeUsGSyOSWc/h8IC4AIgxCYYQYlBtEOEJktFS0TL/8yFBDmigRyiUBvKH1IeXxnFomVata//xBwjoehQweiMwRM3KhPm5cL5ZF0vVrXWvX//4nIiyk1qWikiikjTMATOeLpMQU1FMy45OS4zqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqo="]};
 const Sound = (() => {
   let ctx = null, master = null, noise = null, on = store.get('sound', true), resumedAt = 0, loading = null;
@@ -1067,11 +1070,8 @@ const Sound = (() => {
       if (sample(t, 1.12, 1.7)) return;
       tone(t, 150, 85, 'sine', 0.7, 0.13); click(t, 2600, 2.2, 0.55, 0.045); click(t + 0.004, 5200, 6, 0.18, 0.02);
     },
-    flip(delay, step) {
-      if (!ready()) return; const t = at(delay);
-      if (sample(t, 1.6 + Math.min(step, 10) * 0.04, 0.55)) return;
-      click(t, 3300 + Math.min(step, 10) * 160, 5, 0.22, 0.03); tone(t, 260 + step * 12, 200, 'sine', 0.14, 0.06);
-    },
+    // flips keep the original light tick (placing a disc uses the recording)
+    flip(delay, step) { if (!ready()) return; const t = at(delay); click(t, 3300 + Math.min(step, 10) * 160, 5, 0.22, 0.03); tone(t, 260 + step * 12, 200, 'sine', 0.14, 0.06); },
     ring(delay, n) {
       if (!ready()) return; const t = at(delay), sc = [523.25, 659.25, 783.99, 1046.5, 1318.5];
       const m = Math.min(5, 2 + Math.floor(n / 4));
@@ -1674,6 +1674,7 @@ function renderScore() {
 }
 function renderSettings() {
   const g = G();
+  paintSide();
   const m = settings.mode;
   const pending = (m !== g.mode && !(m === 'online' && g.mode === 'online')) || (m !== 'pvp' && m !== 'online' && settings.human !== g.human);
   $('pendNote').hidden = !(pending && g.humanMoves > 0 && !g.over && m !== 'online');
@@ -1707,10 +1708,10 @@ function renderVariant() {
     : L('大きい輪を8等分、小さい輪を6等分。端がなく、どの列も一周してつながっています。',
       'The big ring is cut into 8, the small ring into 6. No edges: every line wraps all the way around.');
   $('netNote').textContent = cur === 1
-    ? L('→ 大きい輪　↑ 小さい輪。枠の外の薄いマスは反対側の端の続きで、左右は1マスずれてつながります。ここを押しても置けます。',
-      '→ big ring  ↑ small ring. The faded cells continue from the opposite edge; left and right join shifted by one cell. You can play here too.')
-    : L('→ 大きい輪　↑ 小さい輪。枠の外の薄いマスは、反対側の端の続きです。ここを押しても置けます。',
-      '→ big ring  ↑ small ring. The faded cells show the board continuing from the opposite edge. You can play here too.');
+    ? L('→ 大きい輪　↑ 小さい輪。オレンジの枠の中が盤全体で、外の薄いマスは反対側の端の続き。左右は1マスずれてつながります。展開図を押しても置けます。',
+      '→ big ring  ↑ small ring. Inside the orange frame is the whole board; the faded cells continue from the opposite edge, and left and right join shifted by one cell. You can play on the map too.')
+    : L('→ 大きい輪　↑ 小さい輪。オレンジの枠の中が盤全体で、外の薄いマスは反対側の端の続きです。展開図を押しても置けます。',
+      '→ big ring  ↑ small ring. Inside the orange frame is the whole board; the faded cells show it continuing from the opposite edge. You can play on the map too.');
   const K = KOMI[cur], needB = Math.floor((N - K) / 2) + 1, needW = Math.ceil((N + K) / 2);
   const sabaki = '<a href="https://github.com/SabakiHQ/Sabaki" target="_blank" rel="noopener">Sabaki</a>';
   $('rulesList').innerHTML = (LANG === 'en' ? [
@@ -1721,7 +1722,7 @@ function renderVariant() {
     `<b>Komi ${K}</b>: at the end, ${K} is added to Black’s disc count before comparing. On this board White (second) gets the last move and has a big edge, so this evens things out. On a full board, Black wins with ${needB}+ discs and White with ${needW}+.`,
     'If you can’t move, you pass. The game ends when neither player can move.',
     'Beat the <b>Strongest</b> CPU to put your name in the hall of fame. No undo against the Strongest.',
-    `Disc sounds are based on the stone sounds from ${sabaki} (MIT License, © Yichuan Shen).`
+    `The disc-placing sound is based on the stone sounds from ${sabaki} (MIT License, © Yichuan Shen).`
   ] : [
     '大きい輪を8等分、小さい輪を6等分した<b>48マス</b>。端も角もなく、どの列も一周してつながっています。',
     '<b>ねじれトーラス</b>は、大きい輪を1周すると小さい輪の向きに1マスずれてつながります。大きい輪の向きの列は48マス全部を通る1本のらせんになります。',
@@ -1730,7 +1731,7 @@ function renderVariant() {
     `<b>コミ${K}</b>：最後に黒の石数に${K}を足して比べます。この盤では最後の一手を打てる後手（白）がとても有利なので、そのハンデです。盤が全部埋まったら、黒は${needB}個以上、白は${needW}個以上で勝ちです。`,
     '置けないときはパス。どちらも置けなくなったら終了です。',
     '<b>最強</b>に勝つと名前を残せます。最強戦は待ったなしです。',
-    `石の音は ${sabaki} の碁石の音（MIT License, © Yichuan Shen）をもとにしています。`
+    `石を置く音は ${sabaki} の碁石の音（MIT License, © Yichuan Shen）をもとにしています。`
   ]).map(x => `<li>${x}</li>`).join('');
 }
 function refresh() {
@@ -1740,7 +1741,7 @@ function refresh() {
   UI.sel = -1;
   V.setHints(settings.hints && !UI.busy && !isCPUTurn() && !isRemoteTurn() && !netWaiting() ? UI.legal : null);
   if (UI.hover >= 0) setHover(UI.hover, true);
-  renderNet(); renderScore(); renderSettings();
+  renderNet(); renderScore(); renderSettings(); paintSide();
 }
 function setHover(k, force = false) {
   if (k === UI.hover && !force) return;
@@ -2203,15 +2204,19 @@ V.onHover = k => setHover(k);
 netEl.addEventListener('click', e => { const b = e.target.closest('.cell,.ghost'); if (b && b.dataset.k) tryMove(+b.dataset.k); });
 netEl.addEventListener('pointerover', e => { const b = e.target.closest('.cell,.ghost'); if (b && b.dataset.k && e.pointerType === 'mouse') setHover(+b.dataset.k); });
 netEl.addEventListener('pointerleave', () => setHover(-1));
-// the flat map can be folded away (remembered on this device)
-function paintMM() {
-  const mm = $('minimap'), bt = $('mmToggle'), min = mm.classList.contains('min');
-  bt.textContent = min ? '+' : '−'; bt.setAttribute('aria-expanded', String(!min));
-  bt.setAttribute('aria-label', min ? L('展開図を開く', 'Open the flat map') : L('展開図を小さくする', 'Collapse the flat map'));
+// while a game is on, the side shows the score, the flat map and the game buttons; the settings fold away
+function paintSide() {
+  const g = G(), side = document.querySelector('.side');
+  const playing = !g.over && (g.moves.length > 0 || (g.mode === 'online' && !!g.online && g.online.status === 'playing'));
+  if (playing && !UI.wasPlaying) side.classList.remove('show-set');   // each new game starts folded
+  UI.wasPlaying = playing;
+  side.classList.toggle('playing', playing);
+  $('joinBtn').classList.toggle('set-detail', !(g.mode === 'online' && oppAway(g)));   // opponent gone: "Join room" stays at hand to start over
+  const open = side.classList.contains('show-set'), b = $('setToggle');
+  b.textContent = open ? L('設定をとじる', 'Hide settings') : L('対戦相手・盤の設定', 'Opponent & board settings');
+  b.setAttribute('aria-expanded', String(open));
 }
-if (store.get('netMin', false)) $('minimap').classList.add('min');
-$('mmToggle').addEventListener('click', () => { const mm = $('minimap'); mm.classList.toggle('min'); store.set('netMin', mm.classList.contains('min')); paintMM(); });
-paintMM();
+$('setToggle').addEventListener('click', () => { document.querySelector('.side').classList.toggle('show-set'); paintSide(); });
 netEl.addEventListener('focusin', e => { const b = e.target.closest('.cell'); if (b) setHover(+b.dataset.k); });
 netEl.addEventListener('focusout', () => setHover(-1));
 netEl.addEventListener('keydown', e => {
@@ -2271,7 +2276,7 @@ function setLang(l) {
   LANG = l === 'en' ? 'en' : 'ja';
   try { localStorage.setItem(LANG_KEY, LANG); } catch (e) {}
   applyStaticLang();
-  renderVariant(); refresh(); renderHall(); paintSound(); paintResult(); paintMM();
+  renderVariant(); refresh(); renderHall(); paintSound(); paintResult();
   if (onlineMsg) setOnline(onlineMsg);
   if (nameMsgF) setNameMsg(nameMsgF);
 }
