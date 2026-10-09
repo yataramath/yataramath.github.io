@@ -661,6 +661,108 @@ function createGo(N, T, KOMI) {
     return size;
   }
 
+  /* distinct liberties the group would have after c plays p (counted up to 3; a capture counts as 3) */
+  function libsAfter(b, p, c) {
+    const o = p * 4, opp = 3 - c;
+    let nl = 0;
+    for (let d = 0; d < 4; d++) {
+      const q = NB[o + d], cq = b.c[q];
+      if (cq === 0) { let dup = false; for (let x = 0; x < nl; x++) if (LB[x] === q) dup = true; if (!dup) { LB[nl++] = q; if (nl >= 3) return 3; } }
+      else if (cq === opp && atariLib(b, b.head[q]) === p) return 3;
+    }
+    for (let d = 0; d < 4; d++) {
+      const q = NB[o + d];
+      if (b.c[q] !== c) continue;
+      const g = b.head[q];
+      let seen = false; for (let e = 0; e < d; e++) if (b.c[NB[o + e]] === c && b.head[NB[o + e]] === g) seen = true;
+      if (seen) continue;
+      if (b.size[g] > 24) return 3;
+      let s = g;
+      do {
+        const so = s * 4;
+        for (let e = 0; e < 4; e++) {
+          const r = NB[so + e];
+          if (b.c[r] === 0 && r !== p) { let dup = false; for (let x = 0; x < nl; x++) if (LB[x] === r) dup = true; if (!dup) { LB[nl++] = r; if (nl >= 3) return 3; } }
+        }
+        s = b.next[s];
+      } while (s !== g);
+    }
+    return nl;
+  }
+
+  /* ---------- ladders (シチョウ) ----------
+     A group in atari that runs away by extending, and gets put in atari again and again, is caught in a ladder.
+     On the torus a ladder never meets an edge: it winds round until it hits stones (or its own trail),
+     so it is read move by move on scratch boards. */
+  const LADDER_PLIES = 4 * N + 24;                       // longest ladder read (a winding ladder fits easily)
+  const LAD = []; for (let i = 0; i < LADDER_PLIES + 4; i++) LAD.push(new Board());
+  const LADLIB = new Int16Array(3 * (LADDER_PLIES + 4)), LIB3 = new Int16Array(3);
+  const ladRoot = new Board();
+  let ladBudget = 0;
+  /* distinct liberties of group g, at most 3 (written to out[at..]); returns the count, 3 meaning "3 or more" */
+  function libs3(b, g, out, at) {
+    let n = 0, s = g;
+    do {
+      const o = s * 4;
+      for (let d = 0; d < 4; d++) {
+        const q = NB[o + d];
+        if (b.c[q] !== 0) continue;
+        let dup = false; for (let x = 0; x < n; x++) if (out[at + x] === q) { dup = true; break; }
+        if (!dup) { out[at + n++] = q; if (n >= 3) return 3; }
+      }
+      s = b.next[s];
+    } while (s !== g);
+    return n;
+  }
+  /* the group through stone s is in atari and its owner is to move: can it get out?
+     (by capturing an attacking group that is itself in atari, or by extending and surviving the ladder) */
+  function canEscape(b, s, d) {
+    if (--ladBudget < 0 || d >= LADDER_PLIES) return true;          // too long to read: assume it gets out
+    const g = b.head[s], dc = b.c[s], ac = 3 - dc;
+    const L = atariLib(b, g);
+    if (L === -1) return true;
+    let x = g;
+    do {
+      const o = x * 4;
+      for (let e = 0; e < 4; e++) {
+        const q = NB[o + e];
+        if (b.c[q] === ac) { const al = atariLib(b, b.head[q]); if (al >= 0 && isLegal(b, al, dc)) return true; }
+      }
+      x = b.next[x];
+    } while (x !== g);
+    if (L < 0 || !isLegal(b, L, dc)) return false;
+    const b1 = LAD[d].copyFrom(b); play(b1, L);
+    const at = d * 3, n = libs3(b1, b1.head[L], LADLIB, at);
+    if (n >= 3) return true;
+    if (n <= 1) return false;
+    for (let t = 0; t < 2; t++) {                                   // the attacker tries both ataris
+      const a = LADLIB[at + t];
+      if (!isLegal(b1, a, ac)) continue;
+      const b2 = LAD[d + 1].copyFrom(b1); play(b2, a);
+      if (b2.c[L] !== dc) return false;
+      if (!canEscape(b2, L, d + 2)) return false;
+    }
+    return true;
+  }
+  /* our group through s is in atari (we are to move): does running away fail? */
+  function runFails(b, s) { ladBudget = 260; return !canEscape(b, s, 0); }
+  /* we play p, a liberty of the opponent group through s that has exactly two: is that group then caught? */
+  function ataric(b, p, s) {
+    const c = b.toMove, r = ladRoot.copyFrom(b);
+    play(r, p);
+    if (r.c[s] !== 3 - c || atariLib(r, r.head[s]) < 0) return false;
+    ladBudget = 260; return !canEscape(r, s, 0);      // (taking our new stone back counts as getting out)
+  }
+  /* is p the escape of our group in atari, straight into a ladder that catches it? */
+  function runsIntoLadder(b, p, c) {
+    const o = p * 4;
+    for (let d = 0; d < 4; d++) {
+      const q = NB[o + d];
+      if (b.c[q] === c && atariLib(b, b.head[q]) === p) return libsAfter(b, p, c) === 2 && runFails(b, q);
+    }
+    return false;
+  }
+
   // NB order: +i, -i, +j, -j.   DG order: (+1,+1) (-1,-1) (+1,-1) (-1,+1).   "north" = +j
   function patCode(b, p) {
     const o = p * 4, c = b.c;
@@ -712,15 +814,39 @@ function createGo(N, T, KOMI) {
     let nc = 0;
     if (last >= 0) {
       // answer the last move: capture what it left in atari, or save our own stones it put in atari
+      // (by taking an attacker that is itself in atari, or by running — but not into a ladder that catches us)
       const lo = last * 4;
       for (let d = -1; d < 4; d++) {
         const q = d < 0 ? last : NB[lo + d];
         const cq = b.c[q];
         if (!cq) continue;
-        const al = atariLib(b, b.head[q]);
+        const g = b.head[q], al = atariLib(b, g);
         if (al < 0) continue;
-        if (cq === opp) { if (isLegal(b, al, c)) CAND[nc++] = al; }
-        else if (cq === c && isLegal(b, al, c) && !selfAtari(b, al, c)) CAND[nc++] = al;
+        if (cq === opp) { if (isLegal(b, al, c) && nc < 12) CAND[nc++] = al; continue; }
+        if (cq !== c) continue;
+        let x = g;
+        do {
+          const xo = x * 4;
+          for (let e = 0; e < 4; e++) {
+            const r = NB[xo + e];
+            if (b.c[r] === opp) { const ral = atariLib(b, b.head[r]); if (ral >= 0 && nc < 12 && isLegal(b, ral, c)) CAND[nc++] = ral; }
+          }
+          x = b.next[x];
+        } while (x !== g);
+        if (isLegal(b, al, c)) {
+          const la = libsAfter(b, al, c);
+          if (la >= 3 || (la === 2 && !runFails(b, q))) { if (nc < 12) CAND[nc++] = al; }
+        }
+      }
+      // stones we put in atari with our previous move, that were left there: take them
+      if (b.last2 >= 0) {
+        const l2 = b.last2 * 4;
+        for (let d = 0; d < 4; d++) {
+          const q = NB[l2 + d];
+          if (b.c[q] !== opp) continue;
+          const al = atariLib(b, b.head[q]);
+          if (al >= 0 && nc < 12 && isLegal(b, al, c)) CAND[nc++] = al;
+        }
       }
       if (nc && rnd(16) < 14) return CAND[rnd(nc)];
       // good shape next to the last move
@@ -739,6 +865,7 @@ function createGo(N, T, KOMI) {
       if (isEye(b, p, c) || !isLegal(b, p, c)) continue;
       const sa = selfAtari(b, p, c);
       if (sa >= 2 || (sa === 1 && rnd(4) === 0)) continue;     // never throw away a group; single-stone sacrifices sometimes
+      if (runsIntoLadder(b, p, c)) continue;                      // nor run with stones a ladder will catch anyway
       return p;
     }
     return PASS;
@@ -752,10 +879,21 @@ function createGo(N, T, KOMI) {
   const SEQ_P = new Int16Array(4 * NN + 64), SEQ_C = new Uint8Array(4 * NN + 64);
   const FIRST = new Uint8Array(NN);
   const MAXLEN = 3 * NN;
-  function expand(node, b, rootHashes) {
+  const SEENG = new Int16Array(4), THR = new Int16Array(8), ladThreat = new Board();
+  function expand(node, b, rootHashes, shallow) {
     const c = b.toMove, ch = [];
     const near = new Uint8Array(NN);
     for (const lm of [b.last, b.last2]) if (lm >= 0) { near[lm] = 1; for (let d = 0; d < 4; d++) { near[NB[lm * 4 + d]] = 1; near[DG[lm * 4 + d]] = 1; } }
+    // near the top of the tree: which of our groups with two liberties could the opponent catch with an atari (ladder/net)?
+    let nThr = 0;
+    if (shallow) {
+      for (let p = 0; p < NN && nThr < 8; p++) {
+        if (b.c[p] !== c || b.head[p] !== p || libs3(b, p, LIB3, 0) !== 2) continue;
+        const a0 = LIB3[0], a1 = LIB3[1], t = ladThreat.copyFrom(b);
+        t.toMove = 3 - c; t.ko = -1;
+        if ((isLegal(t, a0, 3 - c) && ataric(t, a0, p)) || (isLegal(t, a1, 3 - c) && ataric(t, a1, p))) THR[nThr++] = p;
+      }
+    }
     for (let e = 0; e < b.ne; e++) {
       const p = b.emp[e];
       if (!isLegal(b, p, c) || isEye(b, p, c)) continue;
@@ -766,11 +904,28 @@ function createGo(N, T, KOMI) {
       const nd = new Node(p, c, node);
       let pn = 10, pw = 5;                                             // even prior
       const o = p * 4;
+      let ns = 0;
       for (let d = 0; d < 4; d++) {
         const q = NB[o + d], cq = b.c[q];
         if (!cq) continue;
-        const al = atariLib(b, b.head[q]);
-        if (al === p) { const v = cq === c ? 10 : (b.size[b.head[q]] > 1 ? 30 : 15); pn += v; pw += v; }   // save / capture
+        const g = b.head[q];
+        let dup = false; for (let x = 0; x < ns; x++) if (SEENG[x] === g) dup = true;
+        if (dup) continue;                                             // each neighbouring group once
+        SEENG[ns++] = g;
+        const al = atariLib(b, g), sz = Math.min(b.size[g], 8);
+        if (al === p) {
+          if (cq !== c) { const v = b.size[g] > 1 ? 30 : 15; pn += v; pw += v; }      // capture
+          else {                                                       // run out of atari: fine, unless a ladder catches it
+            const la = libsAfter(b, p, c);
+            if (la >= 3 || (la === 2 && !runFails(b, q))) { const v = 10 + 2 * sz; pn += v; pw += v; }
+            else if (la === 2) pn += 30;
+          }
+        } else if (al === -1 && cq !== c && libs3(b, g, LIB3, 0) === 2 && ataric(b, p, q)) {
+          const v = 20 + 5 * sz; pn += v; pw += v;                     // atari that the ladder (or a net) turns into a capture
+        } else if (nThr && cq === c) {                                 // gives air to our group before the ladder starts
+          let thr = false; for (let x = 0; x < nThr; x++) if (THR[x] === g) thr = true;
+          if (thr && libsAfter(b, p, c) >= 3) { const v = 15 + 3 * sz; pn += v; pw += v; }
+        }
       }
       const sa = selfAtari(b, p, c);
       if (sa >= 2) pn += 10; else if (sa === 1) pn += 3;                 // self-atari counts as losses
@@ -833,7 +988,7 @@ function createGo(N, T, KOMI) {
       if (b.passes >= 2) { terminal = true; break; }
     }
     if (!terminal && node.n - (node.pn || 0) >= EXPAND_AT && node.ch === null) {
-      expand(node, b, null);
+      expand(node, b, null, path.length <= 3);
       if (node.ch.length) {
         node = select(node, C_EXP);
         SEQ_P[depth] = node.move; SEQ_C[depth] = node.color; depth++;
@@ -878,7 +1033,7 @@ function createGo(N, T, KOMI) {
   const LEVELS = {
     normal: { playouts: 1200, time: 2000 },
     good: { playouts: 9000, time: 5000 },
-    max: { playouts: Infinity, time: 6000 }
+    max: { playouts: Infinity, time: 6000, extend: 1.5 }    // 最強 thinks up to 1.5× longer while the top two moves are close
   };
   function boardFromState(st) {
     const b = new Board();
@@ -901,7 +1056,7 @@ function createGo(N, T, KOMI) {
     }
     const hashes = new Set(req.history || []);
     const root = new Node(-2, 3 - c, null);
-    expand(root, b, hashes);
+    expand(root, b, hashes, true);
     root.n = 1;
     const budget = (lv.time || 5000) * (req.scale || 1), maxP = lv.playouts * (req.scale || 1);
     let sims = 0;
@@ -918,7 +1073,15 @@ function createGo(N, T, KOMI) {
           const wr = top.wn / Math.max(1, top.n - top.pn);
           if (wr > 0.88 || wr < 0.12) LAMBDA = LAMBDA_DECIDED;
         }
-        if ((sims & 63) === 0 && now() - t0 > budget) break;
+        if ((sims & 63) === 0) {
+          const el = now() - t0;
+          if (el > budget) {
+            if (!lv.extend || el > budget * lv.extend) break;
+            let n1 = 0, n2 = 0;                                // still unclear which move is best? keep reading a little
+            for (const ch of root.ch) { const v = ch.n - ch.pn; if (v > n1) { n2 = n1; n1 = v; } else if (v > n2) n2 = v; }
+            if (n1 > 1.8 * n2) break;
+          }
+        }
       }
     } finally { var own = OWN; OWN = null; }
     for (let p = 0; p < NN; p++) own[p] /= Math.max(1, sims);
@@ -997,7 +1160,7 @@ function createGo(N, T, KOMI) {
   }
 
   return { N, T, NN, KOMI, PASS, NB, DG, step, Board, play, isLegal, isEye, atariLib, scoreArea, think, ownership, boardFromState, LEVELS,
-    _internal: { policyMove, selfAtari, simulate, Node, expand, seed, playoutDiff, patCode, PAT, setParams(o) { if (o.rave) RAVE_EQ = o.rave; if (o.c != null) C_EXP = o.c; if (o.expand) EXPAND_AT = o.expand; if (o.lambda != null) LAMBDA_DECIDED = o.lambda; if (o.scale) SCALE = o.scale; if (o.noResign) RESIGN_ON = false; if (o.noSkip) SKIP_ON = false; } } };
+    _internal: { runFails, ataric, libsAfter, libs3, runsIntoLadder, policyMove, selfAtari, simulate, Node, expand, seed, playoutDiff, patCode, PAT, setParams(o) { if (o.rave) RAVE_EQ = o.rave; if (o.c != null) C_EXP = o.c; if (o.expand) EXPAND_AT = o.expand; if (o.lambda != null) LAMBDA_DECIDED = o.lambda; if (o.scale) SCALE = o.scale; if (o.noResign) RESIGN_ON = false; if (o.noSkip) SKIP_ON = false; } } };
 }
 
 
@@ -1097,7 +1260,7 @@ const Sound = (() => {
 
 /* ================= CPU: a pool of workers (最強 thinks on several threads at once and adds up their counts) ================= */
 const AI = (() => {
-  const K = Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 2) - 1));
+  const HC = navigator.hardwareConcurrency || 2, K = HC >= 8 ? 6 : Math.max(1, Math.min(4, HC - 1));   // 最強 uses up to 6 threads
   const src = `${createGo.toString()}
 const cache = {};
 function eng(N, T, k) { const key = N + ':' + T + ':' + k; return cache[key] || (cache[key] = createGo(N, T, k)); }
@@ -1696,8 +1859,8 @@ function renderSettings() {
     m === 'pvp' ? L('ひとつの画面で、ふたりが交互に打ちます。', 'Two players take turns on one screen.')
     : m === 'normal' ? L('1手に1,000回ほど先の展開を試して打ちます。', 'Plays out about 1,000 possible continuations before each move.')
     : m === 'good' ? L('1手に1万回ほど先の展開を試して打ちます。', 'Plays out about 10,000 possible continuations before each move.')
-    : m === 'max' ? L(`1手5〜6秒かけて、何万回も先の展開を試して打ちます${AI.threads > 1 ? `（${AI.threads}つのスレッドで同時に）` : ''}。待ったはできません。勝つと名前が残ります。`,
-      `Spends 5–6 seconds a move, playing out tens of thousands of continuations${AI.threads > 1 ? ` (on ${AI.threads} threads at once)` : ''}. No undo. Win and your name goes in the hall of fame.`)
+    : m === 'max' ? L(`1手6〜10秒ほどかけて、何万回も先の展開を試して打ちます${AI.threads > 1 ? `（${AI.threads}つのスレッドで同時に）` : ''}。シチョウも読みます。待ったはできません。勝つと名前が残ります。`,
+      `Spends about 6–10 seconds a move, playing out tens of thousands of continuations${AI.threads > 1 ? ` (on ${AI.threads} threads at once)` : ''}, and reads ladders too. No undo. Win and your name goes in the hall of fame.`)
     : RECORD_URL ? L('インターネットで別の人と対戦します。部屋の名前を2人で決めて、同じ名前で入ってください。', 'Play someone over the internet. Agree on a room name together, then both join with that name.')
     : L('オンライン対戦は、公開版（GitHubのページ）で使えます。', 'Online play works on the published version (the GitHub page).');
   $('joinBtn').disabled = !RECORD_URL || !!(g.online && g.mode === 'online' && g.online.status !== 'over' && !g.over && !oppAway(g));
@@ -1817,7 +1980,7 @@ function askCPU() {
   if (g.moves.length === 0) { finishMove(Math.floor(curN / 2) * curN + Math.floor(curN / 2)); return; }
   const stones = []; for (let p = 0; p < b.c.length; p++) if (b.c[p]) stones.push([p, b.c[p]]);
   const req = { kind: 'think', N: curN, T: curT, komi: KOMI[curN], stones, toMove: b.toMove, ko: b.ko, passes: b.passes, last: b.last, last2: b.last2,
-    history: g.history, level: g.mode, override: g.mode === 'max' ? { time: curN === 9 ? 5000 : 6000 } : null };
+    history: g.history, level: g.mode, override: g.mode === 'max' ? { time: curN === 9 ? 6000 : 7000 } : null };   // (and up to 1.5× longer while it is unsure)
   AI.ask(req, g.mode === 'max' ? AI.threads : 1, res => {
     // resign only when the position looks hopeless on two CPU turns in a row (one bad reading is not enough)
     if (res.resign && g.hopeless) { finishMove(-2); return; }
