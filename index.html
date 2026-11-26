@@ -128,7 +128,7 @@ const GROUPS = [
    record… まとめ記録係で殿堂を取っているゲームのID（なければ書かない）
    en    … 英語版の title・desc・tags（なければ日本語のまま出ます） */
 const GAMES = [
-  { group: 'go', title: 'トーラス囲碁', url: './torus-go/', isNew: true, img: './img/torus-go.jpg', art: 'go', record: 'torus-go',
+  { group: 'go', title: 'トーラス囲碁', url: './torus-go/', img: './img/torus-go.jpg', art: 'go', record: 'torus-go',
     desc: 'ドーナツ型の碁盤で打つ囲碁。端も隅もない盤と、1つねじれた盤。9路と13路。',
     tags: ['CPU 3段階', '2人対戦', 'オンライン対戦', '最強の殿堂'],
     en: { title: 'Torus Go', desc: 'Go on a doughnut: a board with no edges or corners, and one with a twist. 9×9 and 13×13.',
@@ -143,6 +143,16 @@ const GAMES = [
     tags: ['CPU 4段階', '2人対戦', 'オンライン対戦', '最強・最弱の殿堂'],
     en: { title: '3D Reversi 4×4×4', desc: 'Reversi in a 4×4×4 cube, flipping in 26 directions. Plus a “Weakest” CPU that tries its hardest to lose.',
       tags: ['CPU: 4 levels', '2 players', 'Online play', 'Hall of fame (Strongest & Weakest)'] } },
+  { group: 'shogi', title: 'トーラス将棋', url: './torus-shogi/', isNew: true, img: './img/torus-shogi.jpg', art: 'plain', record: 'torus-shogi',
+    desc: 'いつもの将棋盤をドーナツにくっつけた将棋。王と王は赤い境目で背中合わせ。境目は前向きにしか越えられません。ねじれ版も。',
+    tags: ['CPU 3段階', '2人対戦', 'オンライン対戦', '最強の殿堂'],
+    en: { title: 'Torus Shogi', desc: 'Shogi with the usual setup glued into a doughnut. The two kings stand back to back at a red seam you can only cross going forward. Plus a twisted board.',
+      tags: ['CPU: 3 levels', '2 players', 'Online play', 'Hall of fame'] } },
+  { group: 'chess', title: 'トーラスチェス', url: './torus-chess/', isNew: true, img: './img/torus-chess.jpg', art: 'plain', record: 'torus-chess',
+    desc: '8×10のドーナツで、白も黒も同じ向きに進むチェス。前の相手の背中を追いかけます。ねじれ版では横の列が1本のらせんに。',
+    tags: ['CPU 3段階', '2人対戦', 'オンライン対戦', '最強の殿堂'],
+    en: { title: 'Torus Chess', desc: 'Chess on an 8×10 doughnut where White and Black both march the same way, chasing each other round. On the twisted board every rank joins into one long spiral.',
+      tags: ['CPU: 3 levels', '2 players', 'Online play', 'Hall of fame'] } },
   { group: 'original', title: '6（ロク）', url: '/six/', img: './img/six.jpg', art: 'six',
     desc: '数字のマスのあいだに線を引き、同じ数字だけの領域を囲んで取るオリジナルの陣取りゲーム。',
     tags: ['CPU 3段階', 'オンライン対戦', '最強の殿堂'],
